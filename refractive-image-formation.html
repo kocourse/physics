@@ -77,26 +77,7 @@ function updateParams() {
     redraw();
 }
 
-// --- 填色區塊開始 ---
-let R_px = R * scaleFactor;
-let displayH = Math.min(R_px - 1, 200); 
 
-if (n2 > n1) {
-    fill(200, 230, 255, 120); 
-    noStroke();
-    
-    beginShape();
-    // 沿著弧線 (從上到下)
-    for (let y = -displayH; y <= displayH; y += 1) {
-        let x = R_px - Math.sqrt(Math.max(0, R_px * R_px - y * y));
-        vertex(x, y);
-    }
-    // 這裡的 width - offsetX 是為了填滿到畫布最右邊
-    vertex(width, displayH); 
-    vertex(width, -displayH);
-    endShape(CLOSE);
-}
-// --- 填色區塊結束 ---
     
     // 畫主光軸
     stroke(200);
@@ -184,6 +165,7 @@ if (n2 > n1) {
 </script>
 </body>
 </html>
+
 
 
 
