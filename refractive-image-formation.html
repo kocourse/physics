@@ -20,9 +20,13 @@
     
     <div class="controls">
         <div class="input-group">
-            <label>物距 p (cm)</label>
-            <input type="number" id="input_p" value="70" step="1">
+            <label>物距 p: <span id="val_p">60</span> cm</label>
+            <input type="range" id="input_p" min="5" max="150" value="60" step="1" style="width: 150px;">
         </div>
+        \\<div class="input-group">
+        \\    <label>物距 p (cm)</label>
+        \\    <input type="number" id="input_p" value="70" step="1">
+        \\</div>
         <div class="input-group">
             <label>曲率半徑 R (cm)</label>
             <input type="number" id="input_R" value="20" step="1">
@@ -60,7 +64,11 @@ function setup() {
 }
 
 function updateParams() {
+    // 1. 抓取拉桿的值
     p = parseFloat(select('#input_p').value());
+    // 2. 更新標籤上的文字（這是新加入的）
+    select('#val_p').html(p);
+    // 3. 原有的其他邏輯
     R = parseFloat(select('#input_R').value());
     n1 = parseFloat(select('#input_n1').value());
     n2 = parseFloat(select('#input_n2').value());
@@ -157,6 +165,7 @@ function draw() {
 </script>
 </body>
 </html>
+
 
 
 
