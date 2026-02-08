@@ -82,6 +82,34 @@ function draw() {
         arc(c_px, 0, absR * 2, absR * 2, PI - angle, PI + angle);
     }
 
+    // B. 畫背面斜虛線 (加在圓弧右側/背後)
+    strokeWeight(1);
+    drawingContext.setLineDash([2, 4]); // 設定虛線樣式：2像素實線, 4像素空白
+    
+    for (let a = -angleLimit; a <= angleLimit; a += 0.1) {
+        let startX, startY;
+        
+        // 計算圓弧上的點座標
+        if (f > 0) {
+            // 凹面鏡：點在圓心右側
+            startX = center_x + R_px * cos(a);
+            startY = center_x_y + R_px * sin(a); // 假設 center_x_y 是 0
+            startY = R_px * sin(a);
+            
+            // 向右後方延伸斜線
+            line(startX, startY, startX + 8, startY + 8);
+        } else {
+            // 凸面鏡：點在圓心左側
+            startX = center_x + R_px * cos(PI + a);
+            startY = R_px * sin(PI + a);
+            
+            // 向左後方延伸斜線 (凸面鏡的背面在左側)
+            line(startX, startY, startX - 8, startY + 8);
+    }
+    }
+    drawingContext.setLineDash([]); // 畫完後務必關閉虛線模式，否則後續光線會變虛線
+
+    
     // 3. 標記 F 與 C
     fill(255, 140, 0); noStroke(); ellipse(f_px, 0, 8, 8); text('F', f_px - 5, 20);
     fill(0); ellipse(c_px, 0, 8, 8); text('C', c_px - 5, 20);
@@ -147,5 +175,6 @@ function draw() {
 </body>
 
 </html>
+
 
 
