@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Convex Refraction Interface</title>
+<script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.min.js"></script>
+</head>
+<body>
+<h2>Convex Air-Glass Interface Refraction</h2>
+<p>Drag the slider to move the object.</p>
+<div id="slider-container"></div>
+
+<script>
+let slider;
+let objY = 200;
+let n1 = 1.0;  // air
+let n2 = 1.5;  // glass
+let R = 150;   // convex radius
+let lensX, lensY;
+
+function setup() {
+  createCanvas(800, 400);
+  lensX = width/2;
+  lensY = height/2;
+
+  slider = createSlider(50, 300, 100); // distance from object to interface vertex
+  slider.parent('slider-container');
+}
+
+function draw() {
+  background(255);
+
+  // Draw convex interface
+  stroke(0,0,255);
+  strokeWeight(2);
+  noFill();
+  beginShape();
+  for(let y=lensY-100; y<=lensY+100; y+=1){
+    let xOffset = Math.sqrt(R*R - (y-lensY)*(y-lensY));
+    vertex(lensX - xOffset, y);
+  }
+  endShape();
+
+  // Object
+  let objX = lensX - slider.value();
+  drawArrow(objX, objY, 40, 'black');
+
+  // Calculate image distance using n1/s + n2/s' = (n2-n1)/R
+  let s = slider.value();
+  let s_prime = n2 / ((n2-n1)/R - n1/s);
+
+  // Image position
+  let imgX = lensX + s_prime;
+  drawArrow(imgX, objY, s_prime>0? 40:-40, 'red');
+
+  // Draw simple rays
+  stroke(150,150,150);
+  line(objX, objY, lensX, objY); // incident ray
+  line(lensX, objY, imgX, objY); // refracted ray
+}
+
+function drawArrow(x, y, h, col){
+  stroke(col);
+  fill(col);
+  line(x, y, x, y - h);
+  triangle(x-5, y-h, x+5, y-h, x, y-h-10);
+}
+</script>
+</body>
+</html>
