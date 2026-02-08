@@ -81,6 +81,20 @@ function draw() {
     background(255);
     translate(offsetX, height / 2); // 將原點移動到鏡面頂點
 
+    // 1. 判斷哪一邊折射率大，並填色
+    if (n2 > n1) {
+        // 如果右側玻璃折射率較大，將右半邊塗成淺藍色
+        noStroke();
+        fill(200, 230, 255, 150); // RGB (淺藍), 150 是透明度
+        // 從頂點 (0,0) 開始往右畫到底
+        rect(0, -height/2, width - offsetX, height);
+    } else if (n1 > n2) {
+        // 如果左側折射率較大，將左半邊塗色
+        noStroke();
+        fill(200, 230, 255, 150);
+        rect(-offsetX, -height/2, offsetX, height);
+    }
+    
     // 畫主光軸
     stroke(200);
     line(-offsetX, 0, width - offsetX, 0);
@@ -167,6 +181,7 @@ function draw() {
 </script>
 </body>
 </html>
+
 
 
 
