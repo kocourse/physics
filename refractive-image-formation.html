@@ -50,7 +50,7 @@
 let p, R, n1, n2;
 let offsetX = 300; // 頂點在畫面上的 X 座標
 let scaleFactor = 3; // 縮放比例，讓 cm 轉換成像素看起來明顯
-
+let R_px = R * scaleFactor;
 function setup() {
     let canvas = createCanvas(800, 400);
     canvas.parent('canvas-container');
@@ -79,11 +79,7 @@ function updateParams() {
 
 
 function draw() {
-    background(255);
-    
-    // 關鍵 1：必須計算 R_px 供後續所有邏輯使用
-    let R_px = R * scaleFactor;
-    
+    background(255);  
     // 關鍵 2：移動座標原點到頂點
     translate(offsetX, height / 2);
 
@@ -116,7 +112,6 @@ function draw() {
     strokeWeight(2);
     noFill();
     beginShape();
-    let R_px = R * scaleFactor;
     // 限制 displayH 不要超過 R_px，否則 Math.sqrt 會出錯 (NaN)
     let displayH = Math.min(R_px - 1, 300); 
     
@@ -187,6 +182,7 @@ function draw() {
 </script>
 </body>
 </html>
+
 
 
 
