@@ -77,25 +77,26 @@ function updateParams() {
     redraw();
 }
 
-// 在 draw() 裡面，畫主光軸之前加入
+// --- 填色區塊開始 ---
 let R_px = R * scaleFactor;
-let displayH = Math.min(R_px - 1, 200); // 這裡要跟畫介面的高度一致
+let displayH = Math.min(R_px - 1, 200); 
 
 if (n2 > n1) {
-    fill(200, 230, 255, 120); // 淺藍色，120 為透明度
+    fill(200, 230, 255, 120); 
     noStroke();
     
     beginShape();
-    // 1. 沿著弧線座標畫 (從上到下)
+    // 沿著弧線 (從上到下)
     for (let y = -displayH; y <= displayH; y += 1) {
-        let x = R_px - Math.sqrt(R_px * R_px - y * y);
+        let x = R_px - Math.sqrt(Math.max(0, R_px * R_px - y * y));
         vertex(x, y);
     }
-    // 2. 拉到右側邊界
-    vertex(width - offsetX, displayH);
-    vertex(width - offsetX, -displayH);
-    endShape(CLOSE); // 封閉圖形
+    // 這裡的 width - offsetX 是為了填滿到畫布最右邊
+    vertex(width, displayH); 
+    vertex(width, -displayH);
+    endShape(CLOSE);
 }
+// --- 填色區塊結束 ---
     
     // 畫主光軸
     stroke(200);
@@ -183,6 +184,7 @@ if (n2 > n1) {
 </script>
 </body>
 </html>
+
 
 
 
