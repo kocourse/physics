@@ -118,22 +118,42 @@ function draw() {
         text(q > 0 ? 'I (Real)' : 'I (Virtual)', q_px - 20, -50 * mag - 10);
     }
 
-    // 6. 模擬反射光線
+// 6. 模擬反射光線 (修正物理邏輯)
     strokeWeight(1);
-    // 平行光 -> 反射過 F
+    
+    // (1) 平行主軸光線 -> 反射後「折返」過 F
     stroke(100, 100, 255, 200);
-    line(p_px, -50, 0, -50); // 入射
-    line(0, -50, q_px, -50 * mag); // 反射
-    if (q < 0) { // 虛像虛線
+    line(p_px, -50, 0, -50); // 入射光 (向右)
+    
+    if (q > 0) {
+        // 實像：反射光真正經過 q_px
+        line(0, -50, q_px, -50 * mag); 
+    } else {
+        // 虛像：反射光向左發散，右側為虛線延長線
+        let endX = -offsetX; // 往左邊畫到畫布邊緣
+        let slope = (-50 * mag - (-50)) / (q_px - 0);
+        line(0, -50, endX, -50 + slope * (endX - 0)); // 向左的反射光
+        
         drawingContext.setLineDash([5, 5]);
-        line(0, -50, q_px, -50 * mag);
+        line(0, -50, q_px, -50 * mag); // 向右的虛像延長線
         drawingContext.setLineDash([]);
     }
 
-    // 過中心光 -> 入射角 = 反射角
+    // (2) 過頂點光線 -> 入射角 = 反射角 (向左折返)
     stroke(150, 150, 0, 200);
-    line(p_px, -50, 0, 0);
-    line(0, 0, q_px, -50 * mag);
+    line(p_px, -50, 0, 0); // 入射光 (向右下)
+    
+    if (q > 0) {
+        line(0, 0, q_px, -50 * mag); // 反射光 (向左下過實像)
+    } else {
+        let endX = -offsetX;
+        let slope = (-50 * mag - 0) / (q_px - 0);
+        line(0, 0, endX, slope * endX); // 向左下發散
+        
+        drawingContext.setLineDash([5, 5]);
+        line(0, 0, q_px, -50 * mag); // 向右上延伸至虛像
+        drawingContext.setLineDash([]);
+    }
 
     // 7. 顯示數據
     resetMatrix();
@@ -145,3 +165,4 @@ function draw() {
 </script>
 </body>
 </html>
+
