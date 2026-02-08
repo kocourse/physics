@@ -82,32 +82,32 @@ function draw() {
         arc(c_px, 0, absR * 2, absR * 2, PI - angle, PI + angle);
     }
 
-    // B. 畫背面斜虛線 (加在圓弧右側/背後)
+// B. 畫背面斜線 (使用細實線模擬，或是設定完虛線後一定要 reset)
     strokeWeight(1);
-    drawingContext.setLineDash([2, 4]); // 設定虛線樣式：2像素實線, 4像素空白
-    
-    for (let a = -angleLimit; a <= angleLimit; a += 0.1) {
-        let startX, startY;
+    // 如果你想用虛線樣式畫斜線，取消下面註解：
+    // drawingContext.setLineDash([2, 2]); 
+
+    for (let a = -angleLimit; a <= angleLimit; a += 0.2) { // 步進值大一點，斜線才不會太擠
+        let startX, startY, endX, endY;
         
-        // 計算圓弧上的點座標
         if (f > 0) {
-            // 凹面鏡：點在圓心右側
-            startX = center_x + R_px * cos(a);
-            startY = center_x_y + R_px * sin(a); // 假設 center_x_y 是 0
-            startY = R_px * sin(a);
-            
-            // 向右後方延伸斜線
-            line(startX, startY, startX + 8, startY + 8);
+            // 凹面鏡：背面在右側
+            startX = c_px + absR * cos(a);
+            startY = absR * sin(a);
+            endX = startX + 8; // 往右延伸
+            endY = startY - 8; // 往上傾斜
         } else {
-            // 凸面鏡：點在圓心左側
-            startX = center_x + R_px * cos(PI + a);
-            startY = R_px * sin(PI + a);
-            
-            // 向左後方延伸斜線 (凸面鏡的背面在左側)
-            line(startX, startY, startX - 8, startY + 8);
+            // 凸面鏡：背面在左側 (圓弧內側)
+            startX = c_px + absR * cos(PI + a);
+            startY = absR * sin(PI + a);
+            endX = startX - 8; // 往左延伸
+            endY = startY - 8; // 往上傾斜
+        }
+        line(startX, startY, endX, endY);
     }
-    }
-    drawingContext.setLineDash([]); // 畫完後務必關閉虛線模式，否則後續光線會變虛線
+
+    // *** 重要：重置回實線模式 ***
+    drawingContext.setLineDash([]);
 
     
     // 3. 標記 F 與 C
@@ -175,6 +175,7 @@ function draw() {
 </body>
 
 </html>
+
 
 
 
