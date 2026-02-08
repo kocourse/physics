@@ -106,18 +106,18 @@ function draw() {
     // 設定虛線樣式 (實線 2px, 空白 2px)
     drawingContext.setLineDash([2, 2]); 
 
-    for (let a = -angleLimit; a <= angleLimit; a += 0.04) {
+    for (let a = -angleLimit; a <= angleLimit; a += 0.01) {
         let startX, startY;
         if (f > 0) {
             // 凹面鏡：背面在圓弧右側
             startX = c_px + absR * cos(a);
             startY = absR * sin(a);
-            line(startX, startY, startX + 10, startY - 5); // 向右上方延伸
+            line(startX, startY, startX + 20, startY - 0); // 向右上方延伸
         } else {
             // 凸面鏡：背面在圓弧左側 (圓心側)
             startX = c_px + absR * cos(PI + a);
             startY = absR * sin(PI + a);
-            line(startX, startY, startX + 10, startY - 5); // 向左上方延伸
+            line(startX, startY, startX + 20, startY - 0); // 向左上方延伸
         }
     }
 
@@ -190,6 +190,7 @@ function draw() {
 </body>
 
 </html>
+
 
 
 
