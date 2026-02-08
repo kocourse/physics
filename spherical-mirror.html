@@ -98,41 +98,42 @@ function draw() {
         text(q > 0 ? 'I (Real)' : 'I (Virtual)', q_px - 20, -50 * mag - 10);
     }
 
-    // 5. 特殊光線 (實線反射 + 虛像虛線)
-    let h_ray = 40;
+    // 5. 特殊光線 (統一由物體頂端發出)
+    let h_obj = -50; // 物體高度固定為 -50
+    let h_ray = -50; // 平行光的高度也設為 -50
+    
+    // 計算平行光的圓弧反射點 x_hit
     let x_hit = (f > 0) ? (c_px + sqrt(max(0, absR**2 - h_ray**2))) : (c_px - sqrt(max(0, absR**2 - h_ray**2)));
 
+    strokeWeight(1);
+    
     // --- (1) 平行主軸光線 ---
-    stroke(100, 100, 255, 200); strokeWeight(1);
-    line(p_px, -h_ray, x_hit, -h_ray); // 入射 (實線)
+    stroke(100, 100, 255, 200);
+    line(p_px, h_obj, x_hit, h_ray); // 入射：從物體頂端出發
 
     if (q > 0) {
-        // 實像：反射光直接畫到像點 (實線)
-        line(x_hit, -h_ray, q_px, -50 * mag);
+        line(x_hit, h_ray, q_px, -50 * mag); // 反射：經過像的頂端
     } else {
-        // 虛像：向左反射 (實線)，向右延伸 (虛線)
-        let reflect_slope = (-50 * mag - (-h_ray)) / (q_px - x_hit);
-        line(x_hit, -h_ray, -offsetX, -h_ray + reflect_slope * (-offsetX - x_hit)); // 反射實線
-        
+        // 虛像邏輯... (維持不變，但確保座標連向 q_px)
+        let reflect_slope = (-50 * mag - h_ray) / (q_px - x_hit);
+        line(x_hit, h_ray, -offsetX, h_ray + reflect_slope * (-offsetX - x_hit));
         drawingContext.setLineDash([5, 5]);
-        line(x_hit, -h_ray, q_px, -50 * mag); // 虛像虛線
+        line(x_hit, h_ray, q_px, -50 * mag);
         drawingContext.setLineDash([]);
     }
 
-    // --- (2) 過頂點光線 (射向 0,0) ---
+    // --- (2) 過頂點 (0,0) 的光線 ---
     stroke(150, 150, 0, 200);
-    line(p_px, -50, 0, 0); // 入射 (實線)
-
+    line(p_px, h_obj, 0, 0); // 入射：從物體頂端射向鏡面頂點 (0,0)
+    
     if (q > 0) {
-        // 實像：反射後過紅點 (實線)
-        line(0, 0, q_px, -50 * mag);
+        line(0, 0, q_px, -50 * mag); // 反射：依據反射定律經過像的頂端
     } else {
-        // 虛像：向左反射 (實線)，向右延伸 (虛線)
+        // 虛像邏輯... (連向右側虛像頂端)
         let v_slope = (-50 * mag - 0) / (q_px - 0);
-        line(0, 0, -offsetX, v_slope * -offsetX); // 反射實線
-        
+        line(0, 0, -offsetX, v_slope * -offsetX);
         drawingContext.setLineDash([5, 5]);
-        line(0, 0, q_px, -50 * mag); // 虛像虛線
+        line(0, 0, q_px, -50 * mag);
         drawingContext.setLineDash([]);
     }
 
@@ -146,4 +147,5 @@ function draw() {
 </body>
 
 </html>
+
 
