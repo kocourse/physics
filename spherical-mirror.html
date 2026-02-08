@@ -82,32 +82,7 @@ function draw() {
         arc(c_px, 0, absR * 2, absR * 2, PI - angle, PI + angle);
     }
 
-// B. 畫背面斜線 (使用細實線模擬，或是設定完虛線後一定要 reset)
-    strokeWeight(1);
-    // 如果你想用虛線樣式畫斜線，取消下面註解：
-    // drawingContext.setLineDash([2, 2]); 
 
-    for (let a = -angleLimit; a <= angleLimit; a += 0.2) { // 步進值大一點，斜線才不會太擠
-        let startX, startY, endX, endY;
-        
-        if (f > 0) {
-            // 凹面鏡：背面在右側
-            startX = c_px + absR * cos(a);
-            startY = absR * sin(a);
-            endX = startX + 8; // 往右延伸
-            endY = startY - 8; // 往上傾斜
-        } else {
-            // 凸面鏡：背面在左側 (圓弧內側)
-            startX = c_px + absR * cos(PI + a);
-            startY = absR * sin(PI + a);
-            endX = startX - 8; // 往左延伸
-            endY = startY - 8; // 往上傾斜
-        }
-        line(startX, startY, endX, endY);
-    }
-
-    // *** 重要：重置回實線模式 ***
-    drawingContext.setLineDash([]);
 
     
     // 3. 標記 F 與 C
@@ -175,6 +150,7 @@ function draw() {
 </body>
 
 </html>
+
 
 
 
