@@ -80,20 +80,22 @@ function draw() {
     let q = (Math.abs(rhs) > 1e-6) ? n2 / rhs : 10000;
     let mag = (-n1 * q) / (n2 * p);
 
-    // 2. 繪製球面介面 (Arc)
+
+    // 2. 繪製球面介面 (改用 y 座標繪製，固定上下 200 像素)
     stroke(0, 0, 150);
     strokeWeight(2);
     noFill();
     beginShape();
     let R_px = R * scaleFactor;
-    // 增加繪圖範圍，確保弧線夠長
-    for (let angle = -0.8; angle <= 0.8; angle += 0.01) {
-        let x = R_px - R_px * cos(angle);
-        let y = R_px * sin(angle);
+    // 限制 displayH 不要超過 R_px，否則 Math.sqrt 會出錯 (NaN)
+    let displayH = Math.min(R_px - 1, 200); 
+    
+    for (let y = -displayH; y <= displayH; y += 1) {
+        // x = R - sqrt(R^2 - y^2) 讓頂點固定在 (0,0)
+        let x = R_px - Math.sqrt(R_px * R_px - y * y);
         vertex(x, y);
     }
     endShape();
-
     
     // 3. 繪製關鍵點 (O, I, C)
     let p_px = -p * scaleFactor;
@@ -155,6 +157,7 @@ function draw() {
 </script>
 </body>
 </html>
+
 
 
 
