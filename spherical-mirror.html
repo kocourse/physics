@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>球面鏡成像互動模擬 - Mirror Equation</title>
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.min.js"></script>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background: #f4f4f4; }
+        .controls { display: flex; gap: 15px; margin-bottom: 15px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); flex-wrap: wrap; }
+        .input-group { display: flex; flex-direction: column; }
+        label { font-size: 12px; font-weight: bold; margin-bottom: 5px; color: #333; }
+        input { width: 150px; padding: 5px; }
+        canvas { border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .info { margin-top: 10px; color: #666; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <h2>球面鏡成像互動模擬</h2>
+    
+    <div class="controls">
+        <div class="input-group">
+            <label>物距 p: <span id="val_p">60</span> cm</label>
+            <input type="range" id="input_p" min="5" max="200" value="60" step="1">
+        </div>
+        <div class="input-group">
+            <label>焦距 f: <span id="val_f">40</span> cm (正值為凹面鏡，負值為凸面鏡)</label>
+            <input type="range" id="input_f" min="-100" max="100" value="40" step="1">
+        </div>
+    </div>
+
+    <div id="canvas-container"></div>
+    <div class="info">※ 綠色為物體 (O)，紅色為像 (I)，橘色為焦點 (F)，黑色為曲率中心 (C)。</div>
+
+<script>
+let p, f;
+let offsetX = 600; // 鏡面位置靠右，因為大部分光路在左側
+let scaleFactor = 2.5;
+
+function setup() {
+    let canvas = createCanvas(800, 400);
+    canvas.parent('canvas-container');
+    select('#input_p').input(updateParams);
+    select('#input_f').input(updateParams);
+    updateParams();
+    noLoop();
+}
+
+function updateParams() {
+    p = parseFloat(select('#input_p').value());
+    f = parseFloat(select('#input_f').value());
+    if (f === 0) f = 0.1; // 避免焦距為 0
+    select('#val_p').html(p);
+    select('#val_f').html(f);
+    redraw();
+}
+
+function draw() {
+    background(255);
+    translate(offsetX, height / 2);
+
+    // 1. 畫主光軸
+    stroke(200);
+    line(-offsetX, 0, width - offsetX, 0);
+
+    // 2. 畫球面鏡 (弧線表示)
+    noFill();
+    stroke(100);
+    strokeWeight(3);
+    let arcSize = 300;
+    if (f > 0) {
+        // 凹面鏡弧線
+        arc(0, 0, 40, arcSize, HALF_PI + PI, HALF_PI);
+    } else {
+        // 凸面鏡弧線
+        arc(0, 0, 40, arcSize, HALF_PI, HALF_PI + PI);
+    }
+
+    // 3. 物理計算: 1/p + 1/q = 1/f
+    let q = 1 / ( (1/f) - (1/p) );
+    let mag = -q / p;
+
+    let p_px = -p * scaleFactor;
+    let q_px = -q * scaleFactor; // 反射後的像距在鏡前為正，座標則為負
+    let f_px = -f * scaleFactor;
+    let c_px = -2 * f * scaleFactor;
+
+    // 4. 標示 F 與 C
+    fill(255, 140, 0); noStroke();
+    ellipse(f_px, 0, 6, 6); text('F', f_px - 5, 20);
+    fill(0);
+    ellipse(c_px, 0, 6, 6); text('C', c_px - 5, 20);
+
+    // 5. 畫物體 (綠色箭頭)
+    stroke(0, 128, 0); strokeWeight(3);
+    line(p_px, 0, p_px, -50);
+    fill(0, 128, 0); noStroke(); text('O', p_px - 5, -60);
+
+    // 6. 畫像 (紅色箭頭)
+    if (isFinite(q_px)) {
+        stroke(255, 0, 0); strokeWeight(3);
+        line(q_px, 0, q_px, -50 * mag);
+        fill(255, 0, 0); noStroke(); 
+        let typeStr = q > 0 ? 'I (Real)' : 'I (Virtual)';
+        text(typeStr, q_px - 20, -50 * mag + (mag > 0 ? -10 : 20));
+    }
+
+    // 7. 特殊光線
+    strokeWeight(1);
+    // (1) 平行主軸 -> 反射過焦點
+    stroke(100, 100, 255, 180);
+    line(p_px, -50, 0, -50); // 入射
+    line(0, -50, q_px, -50 * mag); // 反射過像點
+    if (q < 0) { // 虛像延長線
+        drawingContext.setLineDash([5, 5]);
+        line(0, -50, q_px, -50 * mag);
+        drawingContext.setLineDash([]);
+    }
+
+    // (2) 過鏡心 (不偏折反射，入射角=反射角)
+    stroke(150, 150, 0, 180);
+    line(p_px, -50, 0, 0);
+    line(0, 0, q_px, -50 * mag);
+
+    // 8. 數據
+    resetMatrix();
+    fill(0); noStroke();
+    text(`物距 p: ${p.toFixed(1)} cm`, 20, 40);
+    text(`像距 q: ${isFinite(q) ? q.toFixed(1) + " cm" : "無限遠"}`, 20, 60);
+    text(`放大率 M: ${isFinite(mag) ? mag.toFixed(2) : "N/A"}`, 20, 80);
+}
+</script>
+</body>
+</html>
