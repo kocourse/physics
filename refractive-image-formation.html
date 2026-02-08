@@ -85,15 +85,16 @@ function draw() {
     strokeWeight(2);
     noFill();
     beginShape();
-    let R_px = R * scaleFactor;
-    // 修改 draw 循環裡的這部分
-    for(let y = lensY - 100; y <= lensY + 100; y += 1){
-        let xOffset = Math.sqrt(R_px * R_px - (y - lensY) * (y - lensY));
-        // 修正：讓頂點（最凸點）剛好在 lensX
-        vertex(lensX + R_px - xOffset, y); 
-    }
-
+    // 取得當前 R 的像素值
+    let currentR = R_px; 
+    // 介面高度不要超過 R，也不要超過你想設定的 200
+    let displayH = Math.min(currentR - 1, 200); 
     
+    beginShape();
+    for (let y = -displayH; y <= displayH; y += 1) {
+        let xOffset = Math.sqrt(currentR * currentR - y * y);
+        vertex(lensX + currentR - xOffset, lensY + y);
+    }
     endShape();
 
     // 3. 繪製關鍵點 (O, I, C)
@@ -156,4 +157,5 @@ function draw() {
 </script>
 </body>
 </html>
+
 
