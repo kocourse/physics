@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Convex Refraction Interface</title>
+<title>Convex Air-Glass Interface Refraction</title>
 <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.min.js"></script>
 </head>
 <body>
 <h2>Convex Air-Glass Interface Refraction</h2>
-<p>Drag the slider to move the object.</p>
+<p>Drag the slider to move the object. Black = object, Red = image</p>
 <div id="slider-container"></div>
 
 <script>
@@ -23,8 +23,10 @@ function setup() {
   lensX = width/2;
   lensY = height/2;
 
-  slider = createSlider(50, 300, 100); // distance from object to interface vertex
+  slider = createSlider(50, 300, 100); // object distance from interface vertex
   slider.parent('slider-container');
+  textSize(16);
+  textAlign(LEFT, CENTER);
 }
 
 function draw() {
@@ -41,7 +43,7 @@ function draw() {
   }
   endShape();
 
-  // Object
+  // Draw object
   let objX = lensX - slider.value();
   drawArrow(objX, objY, 40, 'black');
 
@@ -57,6 +59,13 @@ function draw() {
   stroke(150,150,150);
   line(objX, objY, lensX, objY); // incident ray
   line(lensX, objY, imgX, objY); // refracted ray
+
+  // Display numbers
+  noStroke();
+  fill(0);
+  text(`R (curve radius) = ${R} px`, 10, 20);
+  text(`Object distance s = ${s.toFixed(1)} px`, 10, 40);
+  text(`Image distance s' = ${s_prime.toFixed(1)} px`, 10, 60);
 }
 
 function drawArrow(x, y, h, col){
