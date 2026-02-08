@@ -81,20 +81,19 @@ function draw() {
     let mag = (-n1 * q) / (n2 * p);
 
     // 2. 繪製球面介面 (Arc)
-    stroke(0, 0, 128);
+    stroke(0, 0, 150);
     strokeWeight(2);
     noFill();
     beginShape();
-    // 取得當前 R 的像素值
-    let currentR = R_px; 
-    // 介面高度不要超過 R，也不要超過你想設定的 200
-    let displayH = Math.min(currentR - 1, 200); 
-    for (let y = -displayH; y <= displayH; y += 1) {
-        let xOffset = Math.sqrt(currentR * currentR - y * y);
-        vertex(lensX + currentR - xOffset, lensY + y);
+    // 增加繪圖範圍，確保弧線夠長
+    for (let angle = -0.8; angle <= 0.8; angle += 0.01) {
+        let x = R_px - R_px * cos(angle);
+        let y = R_px * sin(angle);
+        vertex(x, y);
     }
     endShape();
 
+    
     // 3. 繪製關鍵點 (O, I, C)
     let p_px = -p * scaleFactor;
     let q_px = q * scaleFactor;
@@ -155,5 +154,6 @@ function draw() {
 </script>
 </body>
 </html>
+
 
 
