@@ -106,7 +106,7 @@ function draw() {
     // 設定虛線樣式 (實線 2px, 空白 2px)
     drawingContext.setLineDash([2, 2]); 
 
-    for (let a = -angleLimit; a <= angleLimit; a += 0.08) {
+    for (let a = -angleLimit; a <= angleLimit; a += 0.04) {
         let startX, startY;
         if (f > 0) {
             // 凹面鏡：背面在圓弧右側
@@ -190,6 +190,7 @@ function draw() {
 </body>
 
 </html>
+
 
 
 
