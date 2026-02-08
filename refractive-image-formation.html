@@ -1,14 +1,10 @@
 function draw() {
     background(255);
-    
-    // 1. 基礎參數計算
     let R_px = R * scaleFactor;
     let h_limit = Math.min(Math.abs(R_px) - 1, 150); 
-    
-    // 2. 移動座標原點到頂點
     translate(offsetX, height / 2);
 
-    // 3. 繪製背景填色 (n2 > n1 時)
+    // 1. 背景填色 (n2 > n1)
     if (n2 > n1) {
         fill(200, 230, 255, 120); 
         noStroke();
@@ -17,25 +13,16 @@ function draw() {
             let x = R_px - Math.sqrt(Math.max(0, R_px * R_px - y * y));
             vertex(x, y);
         }
-        vertex(width, h_limit); 
-        vertex(width, -h_limit);
+        vertex(width, h_limit); vertex(width, -h_limit);
         endShape(CLOSE);
     }
 
-    // 4. 畫主光軸
-    stroke(180); 
-    strokeWeight(2);
+    // 2. 畫主光軸
+    stroke(180); strokeWeight(2);
     line(-offsetX, 0, width, 0);
 
-    // 5. 計算物理量
-    let rhs = (n2 - n1) / R - n1 / p;
-    let q = (Math.abs(rhs) > 1e-6) ? n2 / rhs : 10000;
-    let mag = (-n1 * q) / (n2 * p);
-
-    // 6. 繪製球面介面線條
-    stroke(0, 0, 150);
-    strokeWeight(2);
-    noFill();
+    // 3. 繪製球面介面
+    stroke(0, 0, 150); strokeWeight(2); noFill();
     beginShape();
     for (let y = -h_limit; y <= h_limit; y += 1) {
         let x = R_px - Math.sqrt(Math.max(0, R_px * R_px - y * y));
@@ -43,46 +30,45 @@ function draw() {
     }
     endShape();
 
-    // 7. 繪製關鍵點 (O, I, C)
+    // 4. 物理計算
+    let rhs = (n2 - n1) / R - n1 / p;
+    let q = (Math.abs(rhs) > 1e-6) ? n2 / rhs : 10000;
+    let f1 = (n1 * R) / (n2 - n1);
+    let f2 = (n2 * R) / (n2 - n1);
+
+    // 5. 標註所有關鍵點
     let p_px = -p * scaleFactor;
     let q_px = q * scaleFactor;
     let c_px = R * scaleFactor;
+    let f1_px = -f1 * scaleFactor;
+    let f2_px = f2 * scaleFactor;
 
-    // 物體 O (綠)
+    // 物體 O, 像 I, 球心 C
     fill(0, 128, 0); noStroke(); ellipse(p_px, 0, 8, 8); text('O', p_px - 5, -15);
-    // 球心 C (黑)
     fill(0); ellipse(c_px, 0, 5, 5); text('C', c_px - 5, 20);
-    // 像 I (紅)
     if (q !== 10000) {
         fill(255, 0, 0); ellipse(q_px, 0, 8, 8);
         text(q > 0 ? 'I (Real)' : 'I (Virtual)', q_px - 20, -15);
     }
+    
+    // 焦點 F1, F2
+    fill(255, 140, 0); // 深橘色
+    ellipse(f1_px, 0, 6, 6); text('F1', f1_px - 8, 18);
+    ellipse(f2_px, 0, 6, 6); text('F2', f2_px - 8, 18);
 
-    // 8. 繪製示範光線 (修正 Math.sqrt 與 Math.pow)
-    let h_ray = 40; 
-    let x_p = R_px - Math.sqrt(Math.max(0, Math.pow(R_px, 2) - Math.pow(h_ray, 2)));
-
-    // 入射光
-    stroke(0, 128, 0, 150);
-    line(p_px, 0, x_p, -h_ray);
-
-    // 折射光
+    // 6. 光線繪製 (使用 Math. 前綴)
+    let h_ray = 40;
+    let x_p = R_px - Math.sqrt(Math.max(0, R_px * R_px - h_ray * h_ray));
+    stroke(0, 128, 0, 150); line(p_px, 0, x_p, -h_ray);
     stroke(255, 0, 0);
-    if (q > 0) {
-        line(x_p, -h_ray, q_px, 0);
-    } else {
-        let endX = width;
-        let slope = (0 - (-h_ray)) / (q_px - x_p);
-        line(x_p, -h_ray, endX, -h_ray + slope * (endX - x_p));
-        // 虛像延長線
-        drawingContext.setLineDash([5, 5]);
-        line(q_px, 0, x_p, -h_ray);
-        drawingContext.setLineDash([]);
-    }
+    if (q > 0) { line(x_p, -h_ray, q_px, 0); } 
+    else { line(x_p, -h_ray, width, -h_ray + (h_ray/(q_px-x_p))*(width-x_p)); }
 
-    // 9. 顯示文字數據 (重設矩陣)
+    // 7. 顯示數據
     resetMatrix();
-    fill(0); noStroke(); textSize(14);
+    fill(0); noStroke();
     text(`計算像距 q: ${q.toFixed(2)} cm`, 20, 40);
-    text(`放大倍率 M: ${mag.toFixed(2)}`, 20, 60);
+    text(`第一焦點 F1: ${f1.toFixed(2)} cm`, 20, 60);
+    text(`第二焦點 F2: ${f2.toFixed(2)} cm`, 20, 80);
 }
+
