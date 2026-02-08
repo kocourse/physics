@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>球面折射互動模擬 - Convex Interface Refraction</title>
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.min.js"></script>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background: #f4f4f4; }
+        .controls { display: flex; gap: 15px; margin-bottom: 15px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); flex-wrap: wrap; }
+        .input-group { display: flex; flex-direction: column; }
+        label { font-size: 12px; font-weight: bold; margin-bottom: 5px; color: #333; }
+        input { width: 80px; padding: 5px; }
+        canvas { border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .info { margin-top: 10px; color: #666; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <h2>球面折射互動模擬</h2>
+    
+    <div class="controls">
+        <div class="input-group">
+            <label>物距 p: <span id="val_p">60</span> cm</label>
+            <input type="range" id="input_p" min="5" max="150" value="60" step="1" style="width: 150px;">
+        </div>
+        <!--
+        <div class="input-group">
+            <label>物距 p (cm)</label>
+            <input type="number" id="input_p" value="70" step="1">
+        </div>
+        -->
+        <div class="input-group">
+            <label>曲率半徑 R (cm)</label>
+            <input type="number" id="input_R" value="20" step="1">
+        </div>
+        <div class="input-group">
+            <label>介質 1 (n1)</label>
+            <input type="number" id="input_n1" value="1.0" step="0.1">
+        </div>
+        <div class="input-group">
+            <label>介質 2 (n2)</label>
+            <input type="number" id="input_n2" value="1.5" step="0.1">
+        </div>
+    </div>
+
+    <div id="canvas-container"></div>
+    <div class="info">※ 綠色為物體 (O)，紅色為像 (I)，黑色為球心 (C)。頂點位置為座標原點。</div>
+
+<script>
+let p, R, n1, n2;
+let offsetX = 300; // 頂點在畫面上的 X 座標
+let scaleFactor = 3; // 縮放比例，讓 cm 轉換成像素看起來明顯
+function setup() {
+    let canvas = createCanvas(800, 400);
+    canvas.parent('canvas-container');
+    
+    // 監聽輸入框變動
+    select('#input_p').input(updateParams);
+    select('#input_R').input(updateParams);
+    select('#input_n1').input(updateParams);
+    select('#input_n2').input(updateParams);
+    
+    updateParams();
+    noLoop(); // 只有在數值變動時更新
+}
+
+function updateParams() {
+    // 1. 抓取拉桿的值
+    p = parseFloat(select('#input_p').value());
+    // 2. 更新標籤上的文字（這是新加入的）
+    select('#val_p').html(p);
+    // 3. 原有的其他邏輯
+    R = parseFloat(select('#input_R').value());
+    n1 = parseFloat(select('#input_n1').value());
+    n2 = parseFloat(select('#input_n2').value());
+    redraw();
+}
+
+
+function draw() {
+background(255);
+    let R_px = R * scaleFactor;
+    let h_limit = Math.min(R_px - 1, 300); // 統一定義高度限制
+    translate(offsetX, height / 2);
+
+    // --- 修正後的填色區塊 ---
+    if (n2 > n1) {
+        fill(200, 230, 255, 120); 
+        noStroke();
+        
+        // 統一使用 R_px 和前面算好的 h_limit (或直接寫 displayH)
+        let fillH = Math.min(R_px - 1, 300); 
+        
+        beginShape();
+        for (let y = -fillH; y <= fillH; y += 1) {
+            // 使用 Math.max 避免負數開根號
+            let x = R_px - Math.sqrt(Math.max(0, R_px * R_px - y * y));
+            vertex(x, y);
+        }
+        // 拉到畫面最右邊封閉
+        vertex(width, fillH); 
+        vertex(width, -fillH);
+        endShape(CLOSE);
+    }   
+
+    // --- 修正後的球面介面 ---
+    stroke(0, 0, 150); // 深藍色邊界
+    strokeWeight(2);
+    noFill(); // 畫線時不要填色
+    
+    beginShape();
+    let arcH = Math.min(R_px - 1, 300); 
+    for (let y = -arcH; y <= arcH; y += 1) {
+        let x = R_px - Math.sqrt(Math.max(0, R_px * R_px - y * y));
+        vertex(x, y);
+    }
+    endShape(); // 注意：畫線不要加 CLOSE，否則會有一條直線連回起點
+
+    // 畫主光軸
+    stroke(180); // 稍微深一點的灰色
+    strokeWeight(2); // 明確設定線寬
+    line(-offsetX, 0, width, 0); // 讓線往右延伸長一點    
+
+    // 1. 計算像距 q (球面折射公式: n1/p + n2/q = (n2-n1)/R)
+    let rhs = (n2 - n1) / R - n1 / p;
+    let q = (Math.abs(rhs) > 1e-6) ? n2 / rhs : 10000;
+    let mag = (-n1 * q) / (n2 * p);
+    let f1 = (n1 * R) / (n2 - n1);
+    let f2 = (n2 * R) / (n2 - n1);
+
+    // 2. 繪製球面介面 (改用 y 座標繪製，固定上下 300 像素)
+    stroke(0, 0, 150);
+    strokeWeight(2);
+    noFill();
+    beginShape();
+    // 限制 displayH 不要超過 R_px，否則 Math.sqrt 會出錯 (NaN)
+    let displayH = Math.min(R_px - 1, 300); 
+    
+    for (let y = -displayH; y <= displayH; y += 1) {
+        // x = R - sqrt(R^2 - y^2) 讓頂點固定在 (0,0)
+        let x = R_px - Math.sqrt(R_px * R_px - y * y);
+        vertex(x, y);
+    }
+    endShape();
+    
+    // 3. 繪製關鍵點 (O, I, C, f1, f2)
+    let p_px = -p * scaleFactor;
+    let q_px = q * scaleFactor;
+    let c_px = R * scaleFactor;
+    let f1_px = -f1 * scaleFactor;
+    let f2_px = f2 * scaleFactor;
+
+    // 物體 O
+    fill(0, 128, 0);
+    noStroke();
+    ellipse(p_px, 0, 8, 8);
+    text('O', p_px - 5, -15);
+
+    // 球心 C
+    fill(0);
+    ellipse(c_px, 0, 5, 5);
+    text('C', c_px - 5, 20);
+
+    // 像 I
+    if (q !== 10000) {
+        fill(255, 0, 0);
+        ellipse(q_px, 0, 8, 8);
+        text(q > 0 ? 'I (Real)' : 'I (Virtual)', q_px - 20, -15);
+    }
+    // 焦點 F1, F2
+    fill(255, 140, 0); // 深橘色
+    ellipse(f1_px, 0, 6, 6); text('F1', f1_px - 8, 18);
+    ellipse(f2_px, 0, 6, 6); text('F2', f2_px - 8, 18);
+
+    // 4. 繪製示範光線
+    let h = 40; // 入射高度 (像素)
+    // 計算入射光線與球面的交點 (x_p)
+    let x_p = R_px - sqrt(max(0, pow(R_px, 2) - pow(h, 2)));
+
+    // 入射光
+    stroke(0, 128, 0, 150);
+    line(p_px, 0, x_p, -h);
+
+    // 折射光
+    stroke(255, 0, 0);
+    if (q > 0) {
+        // 實像：連向 q
+        line(x_p, -h, q_px, 0);
+    } else {
+        // 虛像：由 q 發散，向右延伸
+        let endX = width - offsetX;
+        let slope = (0 - (-h)) / (q_px - x_p);
+        let endY = -h + slope * (endX - x_p);
+        line(x_p, -h, endX, endY);
+        // 虛像延長線 (虛線)
+        drawingContext.setLineDash([5, 5]);
+        line(q_px, 0, x_p, -h);
+        drawingContext.setLineDash([]);
+    }
+
+    // 5. 顯示數據
+    resetMatrix();
+    fill(0);
+    noStroke();
+    textSize(14);
+    text(`計算像距 q: ${q.toFixed(2)} cm`, 20, 40);
+    text(`放大倍率 M: ${mag.toFixed(2)}`, 20, 60);
+    text(`第一焦點 F1: ${f1.toFixed(2)} cm`, 20, 80);
+    text(`第二焦點 F2: ${f2.toFixed(2)} cm`, 20, 100);    
+}
+</script>
+</body>
+</html>
