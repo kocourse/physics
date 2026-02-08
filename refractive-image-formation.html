@@ -50,7 +50,6 @@
 let p, R, n1, n2;
 let offsetX = 300; // 頂點在畫面上的 X 座標
 let scaleFactor = 3; // 縮放比例，讓 cm 轉換成像素看起來明顯
-let R_px = R * scaleFactor;
 function setup() {
     let canvas = createCanvas(800, 400);
     canvas.parent('canvas-container');
@@ -79,27 +78,38 @@ function updateParams() {
 
 
 function draw() {
-    background(255);  
-    // 關鍵 2：移動座標原點到頂點
+background(255);
+    let R_px = R * scaleFactor;
+    let h_limit = Math.min(R_px - 1, 300); // 統一定義高度限制
     translate(offsetX, height / 2);
 
-    // --- 新增：貼合弧線的淺藍色背景 (n2 > n1 時) ---
+    // 1. 填色 (n2 > n1)
     if (n2 > n1) {
         fill(200, 230, 255, 120); 
         noStroke();
-        let fillH = Math.min(R_px - 1, 300); // 跟介面高度一致
         beginShape();
-        for (let y = -fillH; y <= fillH; y += 1) {
+        for (let y = -h_limit; y <= h_limit; y += 1) {
             let x = R_px - Math.sqrt(Math.max(0, R_px * R_px - y * y));
             vertex(x, y);
         }
-        vertex(width, fillH); 
-        vertex(width, -fillH);
+        vertex(width - offsetX, h_limit); // 這裡建議用 width - offsetX 比較準確
+        vertex(width - offsetX, -h_limit);
         endShape(CLOSE);
     }    
-    // 畫主光軸
+
+    // 2. 畫主光軸與介面
     stroke(200);
     line(-offsetX, 0, width - offsetX, 0);
+
+    stroke(0, 0, 150);
+    strokeWeight(2);
+    noFill();
+    beginShape();
+    for (let y = -h_limit; y <= h_limit; y += 1) {
+        let x = R_px - Math.sqrt(Math.max(0, R_px * R_px - y * y));
+        vertex(x, y);
+    }
+    endShape();
 
     // 1. 計算像距 q (球面折射公式: n1/p + n2/q = (n2-n1)/R)
     let rhs = (n2 - n1) / R - n1 / p;
@@ -182,6 +192,7 @@ function draw() {
 </script>
 </body>
 </html>
+
 
 
 
