@@ -63,29 +63,27 @@ function draw() {
     stroke(200);
     line(-offsetX, 0, width - offsetX, 0);
 
-    // 2. 畫真實圓弧球面鏡
-    noFill(); stroke(100); strokeWeight(3);
-    let h_limit = 120; // 鏡面半高度
-    let absR = Math.abs(r_px);
-    // 計算圓弧張角
-    let angle = asin(min(1, h_limit / absR));
+    // 2. 畫球面鏡 (圓弧表示)
+    noFill();
+    stroke(100);
+    strokeWeight(3);
     
-    if (f < 0) { // 凹面鏡：圓心在 -2f (左側)，弧經過 (0,0)
-        arc(c_px, 0, absR * 2, absR * 2, -angle, angle);
-        // 畫背面斜線
-        strokeWeight(1);
-        for(let y = -h_limit; y <= h_limit; y += 12) {
-            let x = c_px + sqrt(max(0, absR**2 - y**2));
-            line(x, y, x + 5, y - 5);
-        }
-    } else { // 凸面鏡：圓心在 -2f (右側)，弧經過 (0,0)
-        arc(c_px, 0, absR * 2, absR * 2, PI - angle, PI + angle);
-        // 畫背面斜線
-        strokeWeight(1);
-        for(let y = -h_limit; y <= h_limit; y += 12) {
-            let x = c_px - sqrt(max(0, absR**2 - y**2));
-            line(x, y, x - 5, y - 5);
-        }
+    let R_val = 2 * f; // 物理上的 R
+    let R_px = Math.abs(R_val * scaleFactor); // 半徑像素值
+    let h_limit = 150; // 鏡面半高度
+    
+    // 計算圓弧的張角 (由半高度與半徑求得)
+    let angle = asin(min(1, h_limit / R_px)); 
+    let center_x = -R_val * scaleFactor; // 圓心座標即為 C 點
+
+    if (f > 0) {
+        // 凹面鏡：圓心在左側 (-2f)，弧向左開口經過 (0,0)
+        arc(center_x, 0, R_px * 2, R_px * 2, -angle, angle);
+    } else {
+        // 凸面鏡：圓心在右側 (-2f 為正)，弧向右開口經過 (0,0)
+        arc(center_x, 0, R_px * 2, R_px * 2, PI - angle, PI + angle);
+    }
+
     // 3. 物理計算: 1/p + 1/q = 1/f
     let q = 1 / ( (1/f) - (1/p) );
     let mag = -q / p;
@@ -143,4 +141,3 @@ function draw() {
 </body>
 
 </html>
-
