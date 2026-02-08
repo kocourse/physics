@@ -70,7 +70,7 @@ function draw() {
     // 計算圓弧張角
     let angle = asin(min(1, h_limit / absR));
     
-    if (f > 0) { // 凹面鏡：圓心在 -2f (左側)，弧經過 (0,0)
+    if (f < 0) { // 凹面鏡：圓心在 -2f (左側)，弧經過 (0,0)
         arc(c_px, 0, absR * 2, absR * 2, -angle, angle);
         // 畫背面斜線
         strokeWeight(1);
@@ -143,3 +143,4 @@ function draw() {
 </body>
 
 </html>
+
