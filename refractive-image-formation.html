@@ -134,4 +134,23 @@ function draw() {
     } else {
         // 虛像：由 q 發散，向右延伸
         let endX = width - offsetX;
-        let slope = (
+        let slope = (0 - (-h)) / (q_px - x_p);
+        let endY = -h + slope * (endX - x_p);
+        line(x_p, -h, endX, endY);
+        // 虛像延長線 (虛線)
+        drawingContext.setLineDash([5, 5]);
+        line(q_px, 0, x_p, -h);
+        drawingContext.setLineDash([]);
+    }
+
+    // 5. 顯示數據
+    resetMatrix();
+    fill(0);
+    noStroke();
+    textSize(14);
+    text(`計算像距 q: ${q.toFixed(2)} cm`, 20, height - 60);
+    text(`放大倍率 M: ${mag.toFixed(2)}`, 20, height - 40);
+}
+</script>
+</body>
+</html>
