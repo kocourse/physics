@@ -78,7 +78,29 @@ function updateParams() {
 }
 
 
+function draw() {
+    background(255);
     
+    // 關鍵 1：必須計算 R_px 供後續所有邏輯使用
+    let R_px = R * scaleFactor;
+    
+    // 關鍵 2：移動座標原點到頂點
+    translate(offsetX, height / 2);
+
+    // --- 新增：貼合弧線的淺藍色背景 (n2 > n1 時) ---
+    if (n2 > n1) {
+        fill(200, 230, 255, 120); 
+        noStroke();
+        let fillH = Math.min(R_px - 1, 300); // 跟介面高度一致
+        beginShape();
+        for (let y = -fillH; y <= fillH; y += 1) {
+            let x = R_px - Math.sqrt(Math.max(0, R_px * R_px - y * y));
+            vertex(x, y);
+        }
+        vertex(width, fillH); 
+        vertex(width, -fillH);
+        endShape(CLOSE);
+    }    
     // 畫主光軸
     stroke(200);
     line(-offsetX, 0, width - offsetX, 0);
@@ -165,6 +187,7 @@ function updateParams() {
 </script>
 </body>
 </html>
+
 
 
 
