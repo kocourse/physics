@@ -12,10 +12,12 @@
 
 <script>
 let slider;
-let objY = 60;
+let objY = 200;
 let n1 = 1.0;  // air
 let n2 = 1.5;  // glass
-let R = 20;   // convex radius
+let R_cm = 20;   // convex radius in cm
+let scale_cm = 0.05; // 1 px = 0.05 cm
+let R_px = R_cm / scale_cm; // convert to pixels
 let lensX, lensY;
 
 function setup() {
@@ -23,7 +25,7 @@ function setup() {
   lensX = width/2;
   lensY = height/2;
 
-  slider = createSlider(50, 300, 100); // object distance from interface vertex
+  slider = createSlider(50, 300, 100); // object distance from interface vertex (px)
   slider.parent('slider-container');
   textSize(16);
   textAlign(LEFT, CENTER);
@@ -38,7 +40,7 @@ function draw() {
   noFill();
   beginShape();
   for(let y=lensY-100; y<=lensY+100; y+=1){
-    let xOffset = Math.sqrt(R*R - (y-lensY)*(y-lensY));
+    let xOffset = Math.sqrt(R_px*R_px - (y-lensY)*(y-lensY));
     vertex(lensX - xOffset, y);
   }
   endShape();
@@ -49,7 +51,7 @@ function draw() {
 
   // Calculate image distance using n1/s + n2/s' = (n2-n1)/R
   let s = slider.value();
-  let s_prime = n2 / ((n2-n1)/R - n1/s);
+  let s_prime = n2 / ((n2-n1)/R_px - n1/slider.value());
 
   // Image position
   let imgX = lensX + s_prime;
@@ -60,12 +62,12 @@ function draw() {
   line(objX, objY, lensX, objY); // incident ray
   line(lensX, objY, imgX, objY); // refracted ray
 
-  // Display numbers
+  // Display numbers in cm
   noStroke();
   fill(0);
-  text(`R (curve radius) = ${R} cm`, 10, 20);
-  text(`Object distance s = ${s.toFixed(1)} cm`, 10, 40);
-  text(`Image distance s' = ${s_prime.toFixed(1)} cm`, 10, 60);
+  text(`R (curve radius) = ${R_cm.toFixed(1)} cm`, 10, 20);
+  text(`Object distance s = ${(s*scale_cm).toFixed(1)} cm`, 10, 40);
+  text(`Image distance s' = ${(s_prime*scale_cm).toFixed(1)} cm`, 10, 60);
 }
 
 function drawArrow(x, y, h, col){
@@ -77,5 +79,3 @@ function drawArrow(x, y, h, col){
 </script>
 </body>
 </html>
-
-
