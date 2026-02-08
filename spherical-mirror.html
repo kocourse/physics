@@ -1,3 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>球面鏡成像互動模擬 - Mirror Equation</title>
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.min.js"></script>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background: #f4f4f4; }
+        .controls { display: flex; gap: 15px; margin-bottom: 15px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); flex-wrap: wrap; }
+        .input-group { display: flex; flex-direction: column; }
+        label { font-size: 12px; font-weight: bold; margin-bottom: 5px; color: #333; }
+        input { width: 150px; padding: 5px; }
+        canvas { border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .info { margin-top: 10px; color: #666; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <h2>球面鏡成像互動模擬</h2>
+    
+    <div class="controls">
+        <div class="input-group">
+            <label>物距 p: <span id="val_p">60</span> cm</label>
+            <input type="range" id="input_p" min="5" max="200" value="60" step="1">
+        </div>
+        <div class="input-group">
+            <label>焦距 f: <span id="val_f">40</span> cm (正值為凹面鏡，負值為凸面鏡)</label>
+            <input type="range" id="input_f" min="-100" max="100" value="40" step="1">
+        </div>
+    </div>
+
+    <div id="canvas-container"></div>
+    <div class="info">※ 綠色為物體 (O)，紅色為像 (I)，橘色為焦點 (F)，黑色為曲率中心 (C)。</div>
+
+<script>
+let p, f;
+let offsetX = 600; // 鏡面位置靠右，因為大部分光路在左側
+let scaleFactor = 2.5;
+
+function setup() {
+    let canvas = createCanvas(800, 400);
+    canvas.parent('canvas-container');
+    select('#input_p').input(updateParams);
+    select('#input_f').input(updateParams);
+    updateParams();
+    noLoop();
+}
+
+function updateParams() {
+    p = parseFloat(select('#input_p').value());
+    f = parseFloat(select('#input_f').value());
+    if (f === 0) f = 0.1; // 避免焦距為 0
+    select('#val_p').html(p);
+    select('#val_f').html(f);
+    redraw();
+}
+
 function draw() {
     background(255);
     translate(offsetX, height / 2);
@@ -85,3 +142,8 @@ function draw() {
     text(`計算像距 q: ${q.toFixed(1)} cm`, 20, 40);
     text(`類型: ${q > 0 ? "實像 (Real)" : "虛像 (Virtual)"}`, 20, 60);
 }
+</script>
+</body>
+
+</html>
+
