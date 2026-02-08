@@ -7,11 +7,10 @@
 </head>
 <body>
 <h2>Convex Air-Glass Interface Refraction</h2>
-<p>Drag the slider to move the object. Black = object, Red = image</p>
-<div id="slider-container"></div>
+<p>Enter the object distance in air (cm). Black = object, Red = image in glass.</p>
+<input type="number" id="objInput" value="15" min="5" max="35" step="0.1"> cm
 
 <script>
-let slider;
 let objY = 200;
 let n1 = 1.0;  // air
 let n2 = 1.5;  // glass
@@ -20,13 +19,22 @@ let scale_cm = 0.05; // 1 px = 0.05 cm
 let R_px = R_cm / scale_cm; // convert to pixels
 let lensX, lensY;
 
+let objDistance_cm = 15; // default object distance
+
 function setup() {
   createCanvas(800, 400);
   lensX = width/2;
   lensY = height/2;
 
-  slider = createSlider(50, 300, 100); // object distance from interface vertex (px)
-  slider.parent('slider-container');
+  // Input box event
+  let input = document.getElementById('objInput');
+  input.addEventListener('input', () => {
+    let val = parseFloat(input.value);
+    if (!isNaN(val)) {
+      objDistance_cm = val;
+    }
+  });
+
   textSize(16);
   textAlign(LEFT, CENTER);
 }
@@ -34,7 +42,7 @@ function setup() {
 function draw() {
   background(255);
 
-  // Draw convex interface
+  // Draw convex interface (semi-circle)
   stroke(0,0,255);
   strokeWeight(2);
   noFill();
@@ -45,28 +53,28 @@ function draw() {
   }
   endShape();
 
-  // Draw object
-  let objX = lensX - slider.value();
+  // Object position in pixels
+  let objX = lensX - objDistance_cm / scale_cm;
   drawArrow(objX, objY, 40, 'black');
 
-  // Calculate image distance using n1/s + n2/s' = (n2-n1)/R
-  let s = slider.value();
-  let s_prime = n2 / ((n2-n1)/R_px - n1/slider.value());
+  // Convert distance to pixels for calculation
+  let s = objDistance_cm / scale_cm;
+  let s_prime = n2 / ((n2-n1)/R_px - n1/s);
 
-  // Image position
+  // Image position in glass
   let imgX = lensX + s_prime;
   drawArrow(imgX, objY, s_prime>0? 40:-40, 'red');
 
-  // Draw simple rays
+  // Draw rays
   stroke(150,150,150);
-  line(objX, objY, lensX, objY); // incident ray
-  line(lensX, objY, imgX, objY); // refracted ray
+  line(objX, objY, lensX, objY); // incident
+  line(lensX, objY, imgX, objY); // refracted
 
   // Display numbers in cm
   noStroke();
   fill(0);
   text(`R (curve radius) = ${R_cm.toFixed(1)} cm`, 10, 20);
-  text(`Object distance s = ${(s*scale_cm).toFixed(1)} cm`, 10, 40);
+  text(`Object distance s = ${objDistance_cm.toFixed(1)} cm`, 10, 40);
   text(`Image distance s' = ${(s_prime*scale_cm).toFixed(1)} cm`, 10, 60);
 }
 
