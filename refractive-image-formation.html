@@ -125,7 +125,8 @@ background(255);
     let rhs = (n2 - n1) / R - n1 / p;
     let q = (Math.abs(rhs) > 1e-6) ? n2 / rhs : 10000;
     let mag = (-n1 * q) / (n2 * p);
-
+    let f1 = (n1 * R) / (n2 - n1);
+    let f2 = (n2 * R) / (n2 - n1);
 
     // 2. 繪製球面介面 (改用 y 座標繪製，固定上下 300 像素)
     stroke(0, 0, 150);
@@ -142,10 +143,12 @@ background(255);
     }
     endShape();
     
-    // 3. 繪製關鍵點 (O, I, C)
+    // 3. 繪製關鍵點 (O, I, C, f1, f2)
     let p_px = -p * scaleFactor;
     let q_px = q * scaleFactor;
     let c_px = R * scaleFactor;
+    let f1_px = -f1 * scaleFactor;
+    let f2_px = f2 * scaleFactor;
 
     // 物體 O
     fill(0, 128, 0);
@@ -164,6 +167,10 @@ background(255);
         ellipse(q_px, 0, 8, 8);
         text(q > 0 ? 'I (Real)' : 'I (Virtual)', q_px - 20, -15);
     }
+    // 焦點 F1, F2
+    fill(255, 140, 0); // 深橘色
+    ellipse(f1_px, 0, 6, 6); text('F1', f1_px - 8, 18);
+    ellipse(f2_px, 0, 6, 6); text('F2', f2_px - 8, 18);
 
     // 4. 繪製示範光線
     let h = 40; // 入射高度 (像素)
@@ -198,7 +205,10 @@ background(255);
     textSize(14);
     text(`計算像距 q: ${q.toFixed(2)} cm`, 20, 40);
     text(`放大倍率 M: ${mag.toFixed(2)}`, 20, 60);
+    text(`第一焦點 F1: ${f1.toFixed(2)} cm`, 20, 80);
+    text(`第二焦點 F2: ${f2.toFixed(2)} cm`, 20, 100);    
 }
 </script>
 </body>
 </html>
+
