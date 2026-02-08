@@ -1,3 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>球面折射互動模擬 - Convex Interface Refraction</title>
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.min.js"></script>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background: #f4f4f4; }
+        .controls { display: flex; gap: 15px; margin-bottom: 15px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); flex-wrap: wrap; }
+        .input-group { display: flex; flex-direction: column; }
+        label { font-size: 12px; font-weight: bold; margin-bottom: 5px; color: #333; }
+        input { width: 80px; padding: 5px; }
+        canvas { border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .info { margin-top: 10px; color: #666; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <h2>球面折射互動模擬</h2>
+    
+    <div class="controls">
+        <div class="input-group">
+            <label>物距 p: <span id="val_p">60</span> cm</label>
+            <input type="range" id="input_p" min="5" max="150" value="60" step="1" style="width: 150px;">
+        </div>
+        <!--
+        <div class="input-group">
+            <label>物距 p (cm)</label>
+            <input type="number" id="input_p" value="70" step="1">
+        </div>
+        -->
+        <div class="input-group">
+            <label>曲率半徑 R (cm)</label>
+            <input type="number" id="input_R" value="20" step="1">
+        </div>
+        <div class="input-group">
+            <label>介質 1 (n1)</label>
+            <input type="number" id="input_n1" value="1.0" step="0.1">
+        </div>
+        <div class="input-group">
+            <label>介質 2 (n2)</label>
+            <input type="number" id="input_n2" value="1.5" step="0.1">
+        </div>
+    </div>
+
+    <div id="canvas-container"></div>
+    <div class="info">※ 綠色為物體 (O)，紅色為像 (I)，黑色為球心 (C)。頂點位置為座標原點。</div>
+
+<script>
+let p, R, n1, n2;
+let offsetX = 300; // 頂點在畫面上的 X 座標
+let scaleFactor = 3; // 縮放比例，讓 cm 轉換成像素看起來明顯
+function setup() {
+    let canvas = createCanvas(800, 400);
+    canvas.parent('canvas-container');
+    
+    // 監聽輸入框變動
+    select('#input_p').input(updateParams);
+    select('#input_R').input(updateParams);
+    select('#input_n1').input(updateParams);
+    select('#input_n2').input(updateParams);
+    
+    updateParams();
+    noLoop(); // 只有在數值變動時更新
+}
+
+function updateParams() {
+    // 1. 抓取拉桿的值
+    p = parseFloat(select('#input_p').value());
+    // 2. 更新標籤上的文字（這是新加入的）
+    select('#val_p').html(p);
+    // 3. 原有的其他邏輯
+    R = parseFloat(select('#input_R').value());
+    n1 = parseFloat(select('#input_n1').value());
+    n2 = parseFloat(select('#input_n2').value());
+    redraw();
+}
+
 function draw() {
     background(255);
     let R_px = R * scaleFactor;
@@ -72,3 +150,6 @@ function draw() {
     text(`第二焦點 F2: ${f2.toFixed(2)} cm`, 20, 80);
 }
 
+</script>
+</body>
+</html>
