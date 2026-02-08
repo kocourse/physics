@@ -89,8 +89,6 @@ function draw() {
     let currentR = R_px; 
     // 介面高度不要超過 R，也不要超過你想設定的 200
     let displayH = Math.min(currentR - 1, 200); 
-    
-    beginShape();
     for (let y = -displayH; y <= displayH; y += 1) {
         let xOffset = Math.sqrt(currentR * currentR - y * y);
         vertex(lensX + currentR - xOffset, lensY + y);
