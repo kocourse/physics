@@ -69,7 +69,7 @@ function draw() {
 
     // 1. 畫主光軸
     stroke(220); line(-offsetX, 0, width - offsetX, 0);
-
+/*
     // 2. 畫球面鏡 (圓弧)
     noFill(); stroke(100); strokeWeight(3);
     let h_limit = 120;
@@ -81,8 +81,48 @@ function draw() {
     } else { // 凸面鏡
         arc(c_px, 0, absR * 2, absR * 2, PI - angle, PI + angle);
     }
+*/
+// --- 2. 畫球面鏡 (圓弧與背面斜線) ---
+    noFill(); 
+    stroke(100); 
+    strokeWeight(3);
+    
+    let absR = Math.abs(2 * f * scaleFactor); 
+    let h_limit = 120; // 鏡面半高度
+    // 關鍵修正：確保 asin 的參數在 -1 到 1 之間，避免產生 NaN
+    let angleLimit = asin(min(0.99, h_limit / absR)); 
+    
+    // A. 畫主圓弧 (實線)
+    if (f > 0) {
+        // 凹面鏡：圓心在左側 c_px
+        arc(c_px, 0, absR * 2, absR * 2, -angleLimit, angleLimit);
+    } else {
+        // 凸面鏡：圓心在右側 c_px
+        arc(c_px, 0, absR * 2, absR * 2, PI - angleLimit, PI + angleLimit);
+    }
 
+    // B. 畫背面斜線
+    strokeWeight(1);
+    // 設定虛線樣式 (實線 2px, 空白 2px)
+    drawingContext.setLineDash([2, 2]); 
 
+    for (let a = -angleLimit; a <= angleLimit; a += 0.15) {
+        let startX, startY;
+        if (f > 0) {
+            // 凹面鏡：背面在圓弧右側
+            startX = c_px + absR * cos(a);
+            startY = absR * sin(a);
+            line(startX, startY, startX + 8, startY - 8); // 向右上方延伸
+        } else {
+            // 凸面鏡：背面在圓弧左側 (圓心側)
+            startX = c_px + absR * cos(PI + a);
+            startY = absR * sin(PI + a);
+            line(startX, startY, startX - 8, startY - 8); // 向左上方延伸
+        }
+    }
+
+    // *** 重要：畫完後立刻重置為實線模式，否則所有東西都會變虛線 ***
+    drawingContext.setLineDash([]);
 
     
     // 3. 標記 F 與 C
@@ -150,6 +190,7 @@ function draw() {
 </body>
 
 </html>
+
 
 
 
