@@ -85,6 +85,7 @@ function draw() {
     strokeWeight(2);
     noFill();
     beginShape();
+    let R_px = R * scaleFactor;
     // 增加繪圖範圍，確保弧線夠長
     for (let angle = -0.8; angle <= 0.8; angle += 0.01) {
         let x = R_px - R_px * cos(angle);
@@ -154,6 +155,7 @@ function draw() {
 </script>
 </body>
 </html>
+
 
 
 
