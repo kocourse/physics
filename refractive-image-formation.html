@@ -38,30 +38,35 @@ function setup() {
 function draw() {
   background(255);
 
-  // Draw convex interface (semi-circle)
-  stroke(0,0,255);
-  strokeWeight(2);
-  noFill();
+// 畫出凸面介面（頂點在 lensX）
   beginShape();
   for(let y=lensY-100; y<=lensY+100; y+=1){
+    // 計算從圓心 (lensX + R_px) 向左回推的距離
     let xOffset = Math.sqrt(R_px*R_px - (y-lensY)*(y-lensY));
-    vertex(lensX - xOffset, y);
+    // 頂點公式：(圓心座標) - (半徑偏移) = (lensX + R_px) - xOffset
+    // 當 y = lensY 時, xOffset = R_px, 座標剛好是 lensX
+    vertex(lensX + R_px - xOffset, y);
   }
   endShape();
-
-  // Convert object distance to px
+// 物距 px
   let s = objDistance_cm / scale_cm;
+  let objX = lensX - s; // 物體在頂點左邊
+  drawArrow(objX, objY, 40, 'black');
 
+
+  
   // Limit object to left of interface
   if(s > lensX - 50) s = lensX - 50;
 
   let objX = lensX - s;
   drawArrow(objX, objY, 40, 'black');
 
-  // Image distance
-  let s_prime = n2 / ((n2-n1)/R_px - n1/s);
-  let imgX = lensX + s_prime;
-  drawArrow(imgX, objY, s_prime>0? 40:-40, 'red');
+// 像距公式修正 (n2/s' = (n2-n1)/R - n1/s)
+  // s_prime = n2 / ( (n2-n1)/R_px - n1/s )
+  let s_prime = n2 / ((n2 - n1) / R_px - n1 / s);
+// 像的座標：頂點 + 像距
+  let imgX = lensX + s_prime; 
+  drawArrow(imgX, objY, s_prime > 0 ? 40 : -40, 'red');  
 
   // Rays
   stroke(150,150,150);
@@ -85,3 +90,4 @@ function drawArrow(x, y, h, col){
 </script>
 </body>
 </html>
+
