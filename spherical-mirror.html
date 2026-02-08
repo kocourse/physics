@@ -1,143 +1,87 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-    <meta charset="UTF-8">
-    <title>球面鏡成像互動模擬 - Mirror Equation</title>
-    <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.min.js"></script>
-    <style>
-        body { font-family: sans-serif; margin: 20px; background: #f4f4f4; }
-        .controls { display: flex; gap: 15px; margin-bottom: 15px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); flex-wrap: wrap; }
-        .input-group { display: flex; flex-direction: column; }
-        label { font-size: 12px; font-weight: bold; margin-bottom: 5px; color: #333; }
-        input { width: 150px; padding: 5px; }
-        canvas { border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .info { margin-top: 10px; color: #666; font-size: 14px; }
-    </style>
-</head>
-<body>
-
-    <h2>球面鏡成像互動模擬</h2>
-    
-    <div class="controls">
-        <div class="input-group">
-            <label>物距 p: <span id="val_p">60</span> cm</label>
-            <input type="range" id="input_p" min="5" max="200" value="60" step="1">
-        </div>
-        <div class="input-group">
-            <label>焦距 f: <span id="val_f">40</span> cm (正值為凹面鏡，負值為凸面鏡)</label>
-            <input type="range" id="input_f" min="-100" max="100" value="40" step="1">
-        </div>
-    </div>
-
-    <div id="canvas-container"></div>
-    <div class="info">※ 綠色為物體 (O)，紅色為像 (I)，橘色為焦點 (F)，黑色為曲率中心 (C)。</div>
-
-<script>
-let p, f;
-let offsetX = 600; // 鏡面位置靠右，因為大部分光路在左側
-let scaleFactor = 2.5;
-
-function setup() {
-    let canvas = createCanvas(800, 400);
-    canvas.parent('canvas-container');
-    select('#input_p').input(updateParams);
-    select('#input_f').input(updateParams);
-    updateParams();
-    noLoop();
-}
-
-function updateParams() {
-    p = parseFloat(select('#input_p').value());
-    f = parseFloat(select('#input_f').value());
-    if (f === 0) f = 0.1; // 避免焦距為 0
-    select('#val_p').html(p);
-    select('#val_f').html(f);
-    redraw();
-}
-
 function draw() {
     background(255);
     translate(offsetX, height / 2);
 
-    // 1. 畫主光軸
-    stroke(200);
-    line(-offsetX, 0, width - offsetX, 0);
-
-    // 2. 畫球面鏡 (圓弧表示)
-    noFill();
-    stroke(100);
-    strokeWeight(3);
-    
-    let R_val = 2 * f; // 物理上的 R
-    let R_px = Math.abs(R_val * scaleFactor); // 半徑像素值
-    let h_limit = 150; // 鏡面半高度
-    
-    // 計算圓弧的張角 (由半高度與半徑求得)
-    let angle = asin(min(1, h_limit / R_px)); 
-    let center_x = -R_val * scaleFactor; // 圓心座標即為 C 點
-
-    if (f > 0) {
-        // 凹面鏡：圓心在左側 (-2f)，弧向左開口經過 (0,0)
-        arc(center_x, 0, R_px * 2, R_px * 2, -angle, angle);
-    } else {
-        // 凸面鏡：圓心在右側 (-2f 為正)，弧向右開口經過 (0,0)
-        arc(center_x, 0, R_px * 2, R_px * 2, PI - angle, PI + angle);
-    }
-
-    // 3. 物理計算: 1/p + 1/q = 1/f
-    let q = 1 / ( (1/f) - (1/p) );
-    let mag = -q / p;
-
+    let r_px = 2 * f * scaleFactor; 
     let p_px = -p * scaleFactor;
-    let q_px = -q * scaleFactor; // 反射後的像距在鏡前為正，座標則為負
+    let q = 1 / ((1/f) - (1/p));
+    let q_px = -q * scaleFactor;
+    let mag = -q / p;
     let f_px = -f * scaleFactor;
     let c_px = -2 * f * scaleFactor;
 
-    // 4. 標示 F 與 C
-    fill(255, 140, 0); noStroke();
-    ellipse(f_px, 0, 6, 6); text('F', f_px - 5, 20);
-    fill(0);
-    ellipse(c_px, 0, 6, 6); text('C', c_px - 5, 20);
+    // 1. 畫主光軸
+    stroke(220); line(-offsetX, 0, width - offsetX, 0);
 
-    // 5. 畫物體 (綠色箭頭)
+    // 2. 畫球面鏡 (圓弧)
+    noFill(); stroke(100); strokeWeight(3);
+    let h_limit = 120;
+    let absR = Math.abs(r_px);
+    let angle = asin(min(1, h_limit / absR));
+    
+    if (f > 0) { // 凹面鏡
+        arc(c_px, 0, absR * 2, absR * 2, -angle, angle);
+    } else { // 凸面鏡
+        arc(c_px, 0, absR * 2, absR * 2, PI - angle, PI + angle);
+    }
+
+    // 3. 標記 F 與 C
+    fill(255, 140, 0); noStroke(); ellipse(f_px, 0, 8, 8); text('F', f_px - 5, 20);
+    fill(0); ellipse(c_px, 0, 8, 8); text('C', c_px - 5, 20);
+
+    // 4. 物體與像
     stroke(0, 128, 0); strokeWeight(3);
-    line(p_px, 0, p_px, -50);
+    line(p_px, 0, p_px, -50); 
     fill(0, 128, 0); noStroke(); text('O', p_px - 5, -60);
 
-    // 6. 畫像 (紅色箭頭)
     if (isFinite(q_px)) {
         stroke(255, 0, 0); strokeWeight(3);
         line(q_px, 0, q_px, -50 * mag);
         fill(255, 0, 0); noStroke(); 
-        let typeStr = q > 0 ? 'I (Real)' : 'I (Virtual)';
-        text(typeStr, q_px - 20, -50 * mag + (mag > 0 ? -10 : 20));
+        text(q > 0 ? 'I (Real)' : 'I (Virtual)', q_px - 20, -50 * mag - 10);
     }
 
-    // 7. 特殊光線
-    strokeWeight(1);
-    // (1) 平行主軸 -> 反射過焦點
-    stroke(100, 100, 255, 180);
-    line(p_px, -50, 0, -50); // 入射
-    line(0, -50, q_px, -50 * mag); // 反射過像點
-    if (q < 0) { // 虛像延長線
+    // 5. 特殊光線 (實線反射 + 虛像虛線)
+    let h_ray = 40;
+    let x_hit = (f > 0) ? (c_px + sqrt(max(0, absR**2 - h_ray**2))) : (c_px - sqrt(max(0, absR**2 - h_ray**2)));
+
+    // --- (1) 平行主軸光線 ---
+    stroke(100, 100, 255, 200); strokeWeight(1);
+    line(p_px, -h_ray, x_hit, -h_ray); // 入射 (實線)
+
+    if (q > 0) {
+        // 實像：反射光直接畫到像點 (實線)
+        line(x_hit, -h_ray, q_px, -50 * mag);
+    } else {
+        // 虛像：向左反射 (實線)，向右延伸 (虛線)
+        let reflect_slope = (-50 * mag - (-h_ray)) / (q_px - x_hit);
+        line(x_hit, -h_ray, -offsetX, -h_ray + reflect_slope * (-offsetX - x_hit)); // 反射實線
+        
         drawingContext.setLineDash([5, 5]);
-        line(0, -50, q_px, -50 * mag);
+        line(x_hit, -h_ray, q_px, -50 * mag); // 虛像虛線
         drawingContext.setLineDash([]);
     }
 
-    // (2) 過鏡心 (不偏折反射，入射角=反射角)
-    stroke(150, 150, 0, 180);
-    line(p_px, -50, 0, 0);
-    line(0, 0, q_px, -50 * mag);
+    // --- (2) 過頂點光線 (射向 0,0) ---
+    stroke(150, 150, 0, 200);
+    line(p_px, -50, 0, 0); // 入射 (實線)
 
-    // 8. 數據
+    if (q > 0) {
+        // 實像：反射後過紅點 (實線)
+        line(0, 0, q_px, -50 * mag);
+    } else {
+        // 虛像：向左反射 (實線)，向右延伸 (虛線)
+        let v_slope = (-50 * mag - 0) / (q_px - 0);
+        line(0, 0, -offsetX, v_slope * -offsetX); // 反射實線
+        
+        drawingContext.setLineDash([5, 5]);
+        line(0, 0, q_px, -50 * mag); // 虛像虛線
+        drawingContext.setLineDash([]);
+    }
+
+    // 6. 數據顯示
     resetMatrix();
     fill(0); noStroke();
-    text(`物距 p: ${p.toFixed(1)} cm`, 20, 40);
-    text(`像距 q: ${isFinite(q) ? q.toFixed(1) + " cm" : "無限遠"}`, 20, 60);
-    text(`放大率 M: ${isFinite(mag) ? mag.toFixed(2) : "N/A"}`, 20, 80);
+    text(`計算像距 q: ${q.toFixed(1)} cm`, 20, 40);
+    text(`類型: ${q > 0 ? "實像 (Real)" : "虛像 (Virtual)"}`, 20, 60);
 }
-</script>
-</body>
-
-</html>
