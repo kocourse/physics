@@ -116,6 +116,11 @@ background(255);
     }
     endShape(); // 注意：畫線不要加 CLOSE，否則會有一條直線連回起點
 
+    // 畫主光軸
+    stroke(180); // 稍微深一點的灰色
+    strokeWeight(2); // 明確設定線寬
+    line(-offsetX, 0, width, 0); // 讓線往右延伸長一點    
+
     // 1. 計算像距 q (球面折射公式: n1/p + n2/q = (n2-n1)/R)
     let rhs = (n2 - n1) / R - n1 / p;
     let q = (Math.abs(rhs) > 1e-6) ? n2 / rhs : 10000;
@@ -197,6 +202,7 @@ background(255);
 </script>
 </body>
 </html>
+
 
 
 
