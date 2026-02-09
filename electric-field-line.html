@@ -1,18 +1,19 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>互動式三電荷電力線</title>
+    <meta charset="UTF-8">
+    <title>互動式三電荷電力線 (帶箭頭版)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; color: white; font-family: sans-serif; }
-        .ui { position: absolute; top: 10px; left: 10px; background: rgba(255,255,255,0.1); padding: 10px; border-radius: 5px; }
+        body { margin: 0; overflow: hidden; background: #000; }
+        .ui { position: absolute; top: 15px; left: 15px; color: white; background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; pointer-events: none; font-family: sans-serif; }
     </style>
 </head>
 <body>
     <div class="ui">
-        <b>互動電力線模擬</b><br>
-        拖曳電荷移動位置<br>
-        紅：正電荷 | 藍：負電荷
+        <b>🔋 物理模擬：電力線與方向箭頭</b><br>
+        • 滑鼠拖曳電荷移動<br>
+        • 紅色：正電 (+1) | 藍色：負電 (-1)
     </div>
 
 <script>
@@ -20,85 +21,119 @@ let charges = [];
 
 function setup() {
     createCanvas(windowWidth, windowHeight);
-    // 初始化三個電荷：x, y, 電量q
-    charges.push(new Charge(width/2 - 100, height/2, 1));
-    charges.push(new Charge(width/2 + 100, height/2, -1));
-    charges.push(new Charge(width/2, height/2 - 100, 1));
+    // 初始化電荷：x, y, q (電量)
+    charges.push(new Charge(width/2 - 150, height/2, 1));
+    charges.push(new Charge(width/2 + 150, height/2, -1));
+    charges.push(new Charge(width/2, height/2 - 150, 1));
 }
 
 function draw() {
     background(0);
     
-    // 繪製電力線 (簡化版：從畫面各處出發)
-    stroke(255, 255, 255, 50);
-    for (let i = 0; i < width; i += 40) {
-        for (let j = 0; j < height; j += 40) {
+    // 繪製格點出發的電力線
+    let density = 45; // 調整這個數值可以改變場線密度
+    for (let i = 0; i <= width; i += density) {
+        for (let j = 0; j <= height; j += density) {
             drawFieldLine(i, j);
         }
     }
 
-    // 繪製並更新電荷
+    // 處理與顯示電荷
     for (let c of charges) {
+        c.update();
         c.display();
-        if (mouseIsPressed && dist(mouseX, mouseY, c.x, c.y) < 20) {
-            c.x = mouseX;
-            c.y = mouseY;
-        }
     }
 }
 
 function drawFieldLine(x, y) {
     let px = x;
     let py = y;
-    let steps = 15; // 增加線段長度
-    let arrowGap = 8; // 每隔幾步畫一個箭頭
-
-    beginShape();
+    let steps = 12; // 每條線延伸的段數
+    let stepSize = 8; // 每段的長度
+    
     noFill();
-    stroke(255, 255, 255, 80);
-
+    stroke(255, 255, 255, 60); // 半透明白線
+    beginShape();
+    
     for (let k = 0; k < steps; k++) {
-        let field = createVector(0, 0);
+        let totalE = createVector(0, 0);
         
-        // 計算該點受所有電荷影響的總電場
+        // 計算總電場向量
         for (let c of charges) {
-            let v = createVector(px - c.x, py - c.y);
-            let d = v.mag();
-            if (d < 15) return; // 靠電荷太近就停止繪製
-            v.normalize();
-            // 電場強度與距離平方成反比 E = k*q/r^2
-            v.mult(c.q / (d * d));
-            field.add(v);
+            let r = createVector(px - c.x, py - c.y);
+            let d = r.mag();
+            
+            if (d < 15) { // 距離太近則停止繪製，避免除以零
+                endShape();
+                return;
+            }
+            
+            r.normalize();
+            // E = kQ/r^2
+            r.mult(c.q / (d * d) * 5000); 
+            totalE.add(r);
         }
-
-        field.normalize();
         
-        // 在特定步數繪製箭頭
-        if (k === arrowGap) {
-            drawArrow(px, py, field.heading());
-        }
-
-        let stepSize = 10; 
-        px += field.x * stepSize;
-        py += field.y * stepSize;
+        // 取得該點方向並繪製
+        let angle = totalE.heading();
         vertex(px, py);
+        
+        // 在線段中點處畫箭頭 (k=6 是大約一半的位置)
+        if (k === 6) {
+            drawArrowHead(px, py, angle);
+        }
+        
+        totalE.normalize().mult(stepSize);
+        px += totalE.x;
+        py += totalE.y;
     }
     endShape();
 }
 
-// 專門繪製箭頭的輔助函數
-function drawArrow(x, y, angle) {
+function drawArrowHead(x, y, angle) {
     push();
     translate(x, y);
     rotate(angle);
-    fill(255, 255, 255, 150);
+    fill(255, 255, 255, 180);
     noStroke();
-    let arrowSize = 6;
-    // 畫一個指向正前方的三角形
-    triangle(arrowSize, 0, -arrowSize, -arrowSize/1.5, -arrowSize, arrowSize/1.5);
+    let sz = 6;
+    triangle(sz, 0, -sz, -sz * 0.7, -sz, sz * 0.7);
     pop();
+}
+
+class Charge {
+    constructor(x, y, q) {
+        this.x = x;
+        this.y = y;
+        this.q = q;
+        this.isDragging = false;
+    }
+    
+    update() {
+        if (mouseIsPressed) {
+            if (dist(mouseX, mouseY, this.x, this.y) < 25 || this.isDragging) {
+                this.x = mouseX;
+                this.y = mouseY;
+                this.isDragging = true;
+            }
+        } else {
+            this.isDragging = false;
+        }
+    }
+    
+    display() {
+        noStroke();
+        fill(this.q > 0 ? '#ff4757' : '#2f3542');
+        circle(this.x, this.y, 25);
+        fill(255);
+        textAlign(CENTER, CENTER);
+        text(this.q > 0 ? "+" : "-", this.x, this.y);
+    }
+}
+
+function windowResized() {
+    resizeCanvas(windowWidth, windowHeight);
 }
 </script>
 </body>
-
 </html>
