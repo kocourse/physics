@@ -15,6 +15,46 @@
         紅：正電荷 | 藍：負電荷
     </div>
 <script>
+這個錯誤 Uncaught ReferenceError: Charge is not defined 是因為程式執行到 new Charge(...) 時，電腦還不認識 Charge 這個類別（Class）。這通常有兩個原因：一是類別定義被刪除了，二是類別定義被放在了呼叫它的代碼之後。要畫出課本那種平滑且比例精確的電力線（如您提供的 $+2q$ 與 $-q/2$ 圖），我們必須把類別、繪圖、以及您的「編號檢查」邏輯完整組合起來。🚀 修正後的完整程式碼（課本級電力線邏輯）請將以下代碼全選並替換您目前的腳本。我已經把 Charge 類別移到最上方，並補齊了所有函數。JavaScript// 1. 先定義類別，確保後續 new Charge 不會報錯
+class Charge {
+  constructor(x, y, q, maxLines) {
+    this.x = x;
+    this.y = y;
+    this.q = q;
+    this.maxLines = maxLines; // 您定義的：該電荷應對應的電力線總數
+    this.connectedCount = 0;  // 記錄已經連上的線數
+    this.isDragging = false;
+  }
+
+  update() {
+    if (mouseIsPressed) {
+      let d = dist(mouseX, mouseY, this.x, this.y);
+      if (d < 30 || this.isDragging) {
+        this.x = mouseX;
+        this.y = mouseY;
+        this.isDragging = true;
+      }
+    } else {
+      this.isDragging = false;
+    }
+  }
+
+  display() {
+    noStroke();
+    fill(this.q > 0 ? '#d63031' : '#0984e3');
+    circle(this.x, this.y, 35);
+    stroke(255);
+    strokeWeight(2);
+    line(this.x - 7, this.y, this.x + 7, this.y);
+    if (this.q > 0) line(this.x, this.y - 7, this.x, this.y + 7);
+    
+    // 顯示電量文字 (如 +2q)
+    fill(0);
+    noStroke();
+    textSize(14);
+    text(this.q + "q", this.x, this.y + 30);
+  }
+}
 let charges = [];
 
 function setup() {
@@ -96,6 +136,7 @@ function traceAndDraw(sx, sy, dir) {
 </script>
 </body>
 </html>
+
 
 
 
