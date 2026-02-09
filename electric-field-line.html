@@ -52,9 +52,9 @@ function draw() {
 function traceFieldLine(x, y) {
     let px = x;
     let py = y;
-    let stepSize = 5;      // 步長縮短一點，路徑會更精確
-    let maxSteps = 400;    // 大幅增加步數，確保能走到負電或邊界
-    let segmentInterval = 15; // 每隔幾步畫一個箭頭
+    let stepSize = 4;      // 步進距離縮小，路徑更精確
+    let maxSteps = 500;    // 步數增加，確保能跨越全螢幕
+    let segmentInterval = 6; // 縮短間隔（原本是15），讓箭頭變密集
     
     for (let k = 0; k < maxSteps; k++) {
         let totalE = createVector(0, 0);
@@ -63,11 +63,7 @@ function traceFieldLine(x, y) {
         for (let c of charges) {
             let r = createVector(px - c.x, py - c.y);
             let d = r.mag();
-            
-            // 距離判斷：如果快撞到電荷了就停止
             if (d < 15) { stopLine = true; break; }
-            
-            // 標準庫倫定律反平方
             let strength = c.q / (d * d);
             r.normalize().mult(strength);
             totalE.add(r);
@@ -77,36 +73,33 @@ function traceFieldLine(x, y) {
 
         let angle = totalE.heading();
 
-        // --- 關鍵修改：繪製不連續但連貫的箭頭段落 ---
+        // --- 關鍵修改：讓線段變密集 ---
         if (k % segmentInterval === 0) {
-            // 畫出帶箭頭的小段，長度稍微比間隔短一點點，創造出斷點感
-            drawArrowSegment(px, py, angle, 8); 
+            // 第四個參數從 8 改成 20，讓線段加長，頭尾相接
+            drawArrowSegment(px, py, angle, 20); 
         }
         
-        // 更新座標，讓點繼續前進
-        totalE.normalize().mult(stepSize);
-        px += totalE.x;
-        py += totalE.y;
+        px += totalE.normalize().x * stepSize;
+        py += totalE.normalize().y * stepSize;
 
-        // 離開畫面才停止
-        if (px < -50 || px > width + 50 || py < -50 || py > height + 50) break;
+        if (px < -100 || px > width + 100 || py < -100 || py > height + 100) break;
     }
 }
 
-// 新增：專門畫「帶箭頭的小線段」的函數
 function drawArrowSegment(x, y, angle, len) {
     push();
     translate(x, y);
     rotate(angle);
     
-    stroke(255, 255, 255, 150); // 線條顏色
-    strokeWeight(1);
-    line(0, 0, len, 0);         // 畫短線
+    // 增加線條亮度與粗細
+    stroke(255, 255, 255, 180); 
+    strokeWeight(1.5);
+    line(0, 0, len, 0); // 這條就是箭頭的「尾巴」
     
+    // 畫箭頭尖端
     noStroke();
-    fill(255, 255, 255, 200);   // 箭頭顏色
-    let arrowSize = 4;
-    // 在短線的末端畫小三角形
+    fill(255, 220);
+    let arrowSize = 5;
     triangle(len + 2, 0, len - arrowSize, -arrowSize/1.5, len - arrowSize, arrowSize/1.5);
     pop();
 }
@@ -155,6 +148,7 @@ function windowResized() {
 </script>
 </body>
 </html>
+
 
 
 
