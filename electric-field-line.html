@@ -16,9 +16,8 @@
     </div>
 <script>
 let charges = [];
-const linesPerCharge = 10; // 您要求的 10 條線
+const linesPerCharge = 32; // 增加線條數量以達到圖中的密度
 
-// 1. 【必須放在最前面】類別定義，避免 "Charge is not defined"
 class Charge {
     constructor(x, y, q) {
         this.x = x;
@@ -42,105 +41,102 @@ class Charge {
 
     display() {
         noStroke();
-        fill(this.q > 0 ? '#ff4757' : '#2f3542');
-        circle(this.x, this.y, 30);
-        fill(255);
-        textAlign(CENTER, CENTER);
-        textSize(18);
-        text(this.q > 0 ? "+" : "-", this.x, this.y);
+        // 專業色彩：紅藍漸層感
+        let col = this.q > 0 ? color(200, 0, 0) : color(0, 0, 200);
+        fill(col);
+        ellipse(this.x, this.y, 35, 35);
+        
+        // 繪製白色的正負號
+        stroke(255);
+        strokeWeight(2);
+        line(this.x - 8, this.y, this.x + 8, this.y);
+        if (this.q > 0) line(this.x, this.y - 8, this.x, this.y + 8);
     }
 }
 
-// 2. 主程式初始化
 function setup() {
     createCanvas(windowWidth, windowHeight);
-    charges.push(new Charge(width/2 - 200, height/2, 1));
-    charges.push(new Charge(width/2 + 200, height/2, -1));
-    charges.push(new Charge(width/2, height/2 - 150, 1));
+    // 模擬圖中的偶極矩配置
+    charges.push(new Charge(width/2 - 120, height/2, 1));
+    charges.push(new Charge(width/2 + 120, height/2, -1));
 }
 
-// 3. 每一影格的繪製
 function draw() {
-    background(0);
+    background(255); // 改為白色背景，更像教材圖片
     
-    // 只從正電荷發射場線
+    // 繪製電力線
     for (let c of charges) {
         if (c.q > 0) {
             let numLines = Math.abs(c.q) * linesPerCharge;
             for (let i = 0; i < numLines; i++) {
-                // 使用 map 確保這 10 條線 360 度均勻分布
                 let a = map(i, 0, numLines, 0, TWO_PI);
-                let startX = c.x + cos(a) * 15;
-                let startY = c.y + sin(a) * 15;
-                traceFieldLine(startX, startY);
+                // 從電荷表面出發
+                let startX = c.x + cos(a) * 18;
+                let startY = c.y + sin(a) * 18;
+                drawSmoothFieldLine(startX, startY);
             }
         }
     }
 
-    // 處理電荷的互動與顯示
     for (let c of charges) {
         c.update();
         c.display();
     }
 }
 
-// 4. 場線追蹤與箭頭段繪製
-function traceFieldLine(x, y) {
-    let px = x;
-    let py = y;
-    let stepSize = 4;
-    let maxSteps = 400; 
-    let segmentInterval = 6; // 控制箭頭密度
+function drawSmoothFieldLine(x, y) {
+    let px = x, py = y;
+    let stepSize = 3;
+    let maxSteps = 800; // 增加步數確保長線條能畫完
     
+    noFill();
+    stroke(0, 100); // 黑色半透明線條
+    strokeWeight(1);
+    
+    beginShape();
     for (let k = 0; k < maxSteps; k++) {
         let totalE = createVector(0, 0);
-        let stopLine = false;
+        let stop = false;
 
         for (let c of charges) {
             let r = createVector(px - c.x, py - c.y);
             let d = r.mag();
-            // 物理檢查：如果撞到任何電荷就停止
-            if (d < 15) { stopLine = true; break; }
             
-            // 向量場疊加：E = kQ/r^2
+            // 碰到任何電荷就停止
+            if (d < 15) { stop = true; break; }
+            
+            // E = kQ / r^2
             let strength = c.q / (d * d);
             r.normalize().mult(strength);
             totalE.add(r);
         }
 
-        if (stopLine || totalE.mag() === 0) break;
+        if (stop || totalE.mag() === 0) break;
 
-        let angle = totalE.heading();
+        vertex(px, py);
 
-        // 繪製「一段一段帶箭頭」的向量段
-        if (k % segmentInterval === 0) {
-            drawArrowSegment(px, py, angle, 18); // 長度設為 18
+        // 每隔一定距離畫一個小箭頭 (對齊電力線方向)
+        if (k > 0 && k % 40 === 0) {
+            drawArrowHead(px, py, totalE.heading());
         }
-        
-        // 更新位置
+
         let v = totalE.normalize().mult(stepSize);
         px += v.x;
         py += v.y;
 
-        // 離開畫面判定
-        if (px < -100 || px > width + 100 || py < -100 || py > height + 100) break;
+        if (px < -width || px > width * 2 || py < -height || py > height * 2) break;
     }
+    endShape();
 }
 
-// 5. 箭頭與線段組成的向量段
-function drawArrowSegment(x, y, angle, len) {
+function drawArrowHead(x, y, angle) {
     push();
     translate(x, y);
     rotate(angle);
-    stroke(255, 180); // 稍微透明的白線
-    strokeWeight(1.5);
-    line(0, 0, len, 0); 
-    
+    fill(0, 150);
     noStroke();
-    fill(255, 220);
-    let arrowSize = 5;
-    // 在線段末端繪製箭頭尖端
-    triangle(len + 2, 0, len - arrowSize, -arrowSize/1.5, len - arrowSize, arrowSize/1.5);
+    // 縮小箭頭，使其看起來更優雅
+    triangle(5, 0, -4, -3, -4, 3);
     pop();
 }
 
@@ -150,6 +146,7 @@ function windowResized() {
 </script>
 </body>
 </html>
+
 
 
 
