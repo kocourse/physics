@@ -16,9 +16,9 @@
     </div>
 <script>
 let charges = [];
-const linesPerCharge = 10;
+const linesPerCharge = 10; // 您要求的 10 條線
 
-// --- 1. 先定義類別 (建議放在最前面或最後面) ---
+// 1. 【必須放在最前面】類別定義，避免 "Charge is not defined"
 class Charge {
     constructor(x, y, q) {
         this.x = x;
@@ -26,6 +26,7 @@ class Charge {
         this.q = q;
         this.isDragging = false;
     }
+
     update() {
         if (mouseIsPressed) {
             let d = dist(mouseX, mouseY, this.x, this.y);
@@ -38,6 +39,7 @@ class Charge {
             this.isDragging = false;
         }
     }
+
     display() {
         noStroke();
         fill(this.q > 0 ? '#ff4757' : '#2f3542');
@@ -49,7 +51,7 @@ class Charge {
     }
 }
 
-// --- 2. p5.js 的主邏輯 ---
+// 2. 主程式初始化
 function setup() {
     createCanvas(windowWidth, windowHeight);
     charges.push(new Charge(width/2 - 200, height/2, 1));
@@ -57,55 +59,88 @@ function setup() {
     charges.push(new Charge(width/2, height/2 - 150, 1));
 }
 
+// 3. 每一影格的繪製
 function draw() {
     background(0);
+    
+    // 只從正電荷發射場線
     for (let c of charges) {
         if (c.q > 0) {
             let numLines = Math.abs(c.q) * linesPerCharge;
             for (let i = 0; i < numLines; i++) {
+                // 使用 map 確保這 10 條線 360 度均勻分布
                 let a = map(i, 0, numLines, 0, TWO_PI);
-                traceFieldLine(c.x + cos(a) * 15, c.y + sin(a) * 15);
+                let startX = c.x + cos(a) * 15;
+                let startY = c.y + sin(a) * 15;
+                traceFieldLine(startX, startY);
             }
         }
     }
+
+    // 處理電荷的互動與顯示
     for (let c of charges) {
         c.update();
         c.display();
     }
 }
 
-// --- 3. 繪圖輔助函數 ---
+// 4. 場線追蹤與箭頭段繪製
 function traceFieldLine(x, y) {
-    let px = x, py = y;
-    let stepSize = 4, maxSteps = 500, segmentInterval = 6;
+    let px = x;
+    let py = y;
+    let stepSize = 4;
+    let maxSteps = 400; 
+    let segmentInterval = 6; // 控制箭頭密度
+    
     for (let k = 0; k < maxSteps; k++) {
         let totalE = createVector(0, 0);
         let stopLine = false;
+
         for (let c of charges) {
             let r = createVector(px - c.x, py - c.y);
             let d = r.mag();
+            // 物理檢查：如果撞到任何電荷就停止
             if (d < 15) { stopLine = true; break; }
-            r.normalize().mult(c.q / (d * d));
+            
+            // 向量場疊加：E = kQ/r^2
+            let strength = c.q / (d * d);
+            r.normalize().mult(strength);
             totalE.add(r);
         }
+
         if (stopLine || totalE.mag() === 0) break;
-        if (k % segmentInterval === 0) drawArrowSegment(px, py, totalE.heading(), 20);
+
+        let angle = totalE.heading();
+
+        // 繪製「一段一段帶箭頭」的向量段
+        if (k % segmentInterval === 0) {
+            drawArrowSegment(px, py, angle, 18); // 長度設為 18
+        }
+        
+        // 更新位置
         let v = totalE.normalize().mult(stepSize);
-        px += v.x; py += v.y;
+        px += v.x;
+        py += v.y;
+
+        // 離開畫面判定
         if (px < -100 || px > width + 100 || py < -100 || py > height + 100) break;
     }
 }
 
+// 5. 箭頭與線段組成的向量段
 function drawArrowSegment(x, y, angle, len) {
     push();
     translate(x, y);
     rotate(angle);
-    stroke(255, 180);
+    stroke(255, 180); // 稍微透明的白線
     strokeWeight(1.5);
-    line(0, 0, len, 0);
+    line(0, 0, len, 0); 
+    
     noStroke();
     fill(255, 220);
-    triangle(len + 2, 0, len - 5, -3.5, len - 5, 3.5);
+    let arrowSize = 5;
+    // 在線段末端繪製箭頭尖端
+    triangle(len + 2, 0, len - arrowSize, -arrowSize/1.5, len - arrowSize, arrowSize/1.5);
     pop();
 }
 
@@ -115,6 +150,7 @@ function windowResized() {
 </script>
 </body>
 </html>
+
 
 
 
