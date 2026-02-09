@@ -52,7 +52,7 @@ function draw() {
 function traceFieldLine(x, y) {
     let px = x;
     let py = y;
-    let stepSize = 4;      // 步進距離縮小，路徑更精確
+    let stepSize = 5;      // 步進距離縮小，路徑更精確
     let maxSteps = 500;    // 步數增加，確保能跨越全螢幕
     let segmentInterval = 6; // 縮短間隔（原本是15），讓箭頭變密集
     
@@ -76,7 +76,7 @@ function traceFieldLine(x, y) {
         // --- 關鍵修改：讓線段變密集 ---
         if (k % segmentInterval === 0) {
             // 第四個參數從 8 改成 20，讓線段加長，頭尾相接
-            drawArrowSegment(px, py, angle, 20); 
+            drawArrowSegment(px, py, angle, 15); 
         }
         
         px += totalE.normalize().x * stepSize;
@@ -148,6 +148,7 @@ function windowResized() {
 </script>
 </body>
 </html>
+
 
 
 
