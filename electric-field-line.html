@@ -89,7 +89,7 @@ function traceFieldLine(startX, startY, dir) {
     let py = startY;
     let stepSize = 4;
     let maxSteps = 400; 
-    let segmentInterval = 10; // 箭頭出現密度
+    let segmentInterval = 10; 
     
     for (let k = 0; k < maxSteps; k++) {
         let totalE = createVector(0, 0);
@@ -98,10 +98,10 @@ function traceFieldLine(startX, startY, dir) {
         for (let c of charges) {
             let r = createVector(px - c.x, py - c.y);
             let d = r.mag();
-            // 物理檢查：避免場線穿過電荷中心
+            // 碰到「其他」電荷就停止
             if (d < 15 && k > 2) { stopLine = true; break; }
             
-            // E = kQ/r^2
+            // 標準物理公式 E = kQ/r^2
             let strength = c.q / (d * d);
             r.normalize().mult(strength);
             totalE.add(r);
@@ -109,21 +109,20 @@ function traceFieldLine(startX, startY, dir) {
 
         if (stopLine || totalE.mag() === 0) break;
 
-        let angle = totalE.heading();
-        
-        // 如果是從負電荷反向追蹤，箭頭要轉 180 度指向電荷
-        let arrowAngle = (dir === 1) ? angle : angle + PI;
+        // --- 核心物理修正：箭頭方向 ---
+        // 無論是從正電出發還是負電出發，箭頭永遠必須指向「總電場 E」的方向
+        let angle = totalE.heading(); 
 
         if (k % segmentInterval === 0) {
-            drawArrowSegment(px, py, arrowAngle, 12);
+            // 這裡的 angle 永遠代表電場方向，所以負電荷周圍的箭頭會自動指向它
+            drawArrowSegment(px, py, angle, 12);
         }
         
-        // 根據 direction 決定前進或後退
+        // 移動邏輯：dir 決定我們是順著電場畫(1)還是逆著電場畫(-1)
         let v = totalE.normalize().mult(stepSize * dir);
         px += v.x;
         py += v.y;
 
-        // 離開畫面一定距離後停止計算
         if (px < -100 || px > width + 100 || py < -100 || py > height + 100) break;
     }
 }
@@ -151,6 +150,7 @@ function windowResized() {
 </script>
 </body>
 </html>
+
 
 
 
