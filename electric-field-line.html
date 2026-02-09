@@ -16,6 +16,46 @@
     </div>
 
 <script>
+class Charge {
+    constructor(x, y, q) {
+        this.x = x;
+        this.y = y;
+        this.q = q;
+        this.isDragging = false;
+    }
+
+    update() {
+        // 處理滑鼠拖拽邏輯
+        if (mouseIsPressed) {
+            let d = dist(mouseX, mouseY, this.x, this.y);
+            if (d < 30 || this.isDragging) {
+                this.x = mouseX;
+                this.y = mouseY;
+                this.isDragging = true;
+            }
+        } else {
+            this.isDragging = false;
+        }
+    }
+
+    display() {
+        noStroke();
+        // 根據正負電顯示紅或藍
+        fill(this.q > 0 ? '#ff4757' : '#2f3542');
+        circle(this.x, this.y, 30);
+        
+        // 顯示正負號文字
+        fill(255);
+        textAlign(CENTER, CENTER);
+        textSize(18);
+        text(this.q > 0 ? "+" : "-", this.x, this.y);
+    }
+}
+
+// 補上視窗縮放自動調整，否則換視窗大小會破圖
+function windowResized() {
+    resizeCanvas(windowWidth, windowHeight);
+}
 let charges = [];
 const linesPerCharge = 16; // 每單位電量的場線數量
 
@@ -105,3 +145,4 @@ function drawArrowHead(x, y, angle) {
 </script>
 </body>
 </html>
+
