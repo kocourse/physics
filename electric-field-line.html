@@ -17,7 +17,7 @@
 
 <script>
 let charges = [];
-const linesPerCharge = 10; // 每單位電量的場線數量
+const linesPerCharge = 16; // 每單位電量的場線數量
 
 function setup() {
     createCanvas(windowWidth, windowHeight);
@@ -29,18 +29,18 @@ function setup() {
 
 function draw() {
     background(0);
+    
+    // 只從「正電荷」出發畫線 (場線由正極流向負極或無限遠)
     for (let c of charges) {
         if (c.q > 0) {
             let numLines = Math.abs(c.q) * linesPerCharge;
-            // 使用整數迴圈 (i) 而非浮點數迴圈 (a)，確保次數精確
-            for (let i = 0; i < numLines; i++) {
-                let a = map(i, 0, numLines, 0, TWO_PI); // 將 i 映射到 0 ~ 2π
+            for (let a = 0; a < TWO_PI; a += TWO_PI / numLines) {
+                // 從電荷邊緣一點點的位置出發
                 let startX = c.x + cos(a) * 15;
                 let startY = c.y + sin(a) * 15;
                 traceFieldLine(startX, startY);
             }
         }
-    }
     }
 
     for (let c of charges) {
@@ -52,102 +52,61 @@ function draw() {
 function traceFieldLine(x, y) {
     let px = x;
     let py = y;
-    let stepSize = 10;      // 步進距離縮小，路徑更精確
-    let maxSteps = 500;    // 步數增加，確保能跨越全螢幕
-    let segmentInterval = 6; // 縮短間隔（原本是15），讓箭頭變密集
+    let stepSize = 6;
+    let maxSteps = 150; // 增加步數讓線條延伸更遠
     
+    noFill();
+    stroke(255, 255, 255, 100);
+    beginShape();
+    
+    let lastAngle = 0;
     for (let k = 0; k < maxSteps; k++) {
         let totalE = createVector(0, 0);
-        let stopLine = false;
+        let nearCharge = false;
 
         for (let c of charges) {
             let r = createVector(px - c.x, py - c.y);
             let d = r.mag();
-            if (d < 15) { stopLine = true; break; }
-            let strength = c.q / (d * d);
-            r.normalize().mult(strength);
+            
+            // 如果撞到負電荷或回到原電荷，就停止
+            if (d < 10) { nearCharge = true; break; }
+            
+            r.normalize().mult(c.q / (d * d));
             totalE.add(r);
         }
 
-        if (stopLine || totalE.mag() === 0) break;
+        if (nearCharge) break;
 
-        let angle = totalE.heading();
-
-        // --- 關鍵修改：讓線段變密集 ---
-        if (k % segmentInterval === 0) {
-            // 第四個參數從 8 改成 20，讓線段加長，頭尾相接
-            drawArrowSegment(px, py, angle, 15); 
-        }
+        lastAngle = totalE.heading();
+        vertex(px, py);
         
-        px += totalE.normalize().x * stepSize;
-        py += totalE.normalize().y * stepSize;
+        totalE.normalize().mult(stepSize);
+        px += totalE.x;
+        py += totalE.y;
 
-        if (px < -100 || px > width + 100 || py < -100 || py > height + 100) break;
+        // 離開畫面也停止
+        if (px < 0 || px > width || py < 0 || py > height) break;
     }
+    endShape();
+
+    // 在電力線的末端畫箭頭
+    drawArrowHead(px, py, lastAngle);
 }
 
-function drawArrowSegment(x, y, angle, len) {
+function drawArrowHead(x, y, angle) {
     push();
     translate(x, y);
     rotate(angle);
-    
-    // 增加線條亮度與粗細
-    stroke(255, 255, 255, 180); 
-    strokeWeight(1.5);
-    line(0, 0, len, 0); // 這條就是箭頭的「尾巴」
-    
-    // 畫箭頭尖端
+    fill(255, 200);
     noStroke();
-    fill(255, 220);
-    let arrowSize = 5;
-    triangle(len + 2, 0, len - arrowSize, -arrowSize/1.5, len - arrowSize, arrowSize/1.5);
+    triangle(8, 0, -5, -4, -5, 4);
     pop();
-}
-
-    class Charge {
-    constructor(x, y, q) {
-        this.x = x;
-        this.y = y;
-        this.q = q;
-        this.isDragging = false;
-    }
-
-    update() {
-        // 處理滑鼠拖拽邏輯
-        if (mouseIsPressed) {
-            let d = dist(mouseX, mouseY, this.x, this.y);
-            if (d < 30 || this.isDragging) {
-                this.x = mouseX;
-                this.y = mouseY;
-                this.isDragging = true;
-            }
-        } else {
-            this.isDragging = false;
-        }
-    }
-
-    display() {
-        noStroke();
-        // 根據正負電顯示紅或藍
-        fill(this.q > 0 ? '#ff4757' : '#2f3542');
-        circle(this.x, this.y, 30);
-        
-        // 顯示正負號文字
-        fill(255);
-        textAlign(CENTER, CENTER);
-        textSize(18);
-        text(this.q > 0 ? "+" : "-", this.x, this.y);
-    }
-}
-
-// 補上視窗縮放自動調整，否則換視窗大小會破圖
-function windowResized() {
-    resizeCanvas(windowWidth, windowHeight);
 }
 
 </script>
 </body>
 </html>
+
 
 
 
