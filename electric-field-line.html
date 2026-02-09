@@ -16,7 +16,7 @@
     </div>
 <script>
 let charges = [];
-const linesPerCharge = 10; // 增加線條數量以達到圖中的密度
+const linesPerCharge = 16; 
 
 class Charge {
     constructor(x, y, q) {
@@ -25,7 +25,6 @@ class Charge {
         this.q = q;
         this.isDragging = false;
     }
-
     update() {
         if (mouseIsPressed) {
             let d = dist(mouseX, mouseY, this.x, this.y);
@@ -38,42 +37,42 @@ class Charge {
             this.isDragging = false;
         }
     }
-
     display() {
         noStroke();
-        // 專業色彩：紅藍漸層感
-        let col = this.q > 0 ? color(200, 0, 0) : color(0, 0, 200);
+        // 使用專業的紅藍漸層色
+        let col = this.q > 0 ? color(200, 20, 20) : color(20, 20, 200);
         fill(col);
-        ellipse(this.x, this.y, 35, 35);
+        circle(this.x, this.y, 35);
         
-        // 繪製白色的正負號
+        // 畫出白色的正負號
         stroke(255);
         strokeWeight(2);
-        line(this.x - 8, this.y, this.x + 8, this.y);
-        if (this.q > 0) line(this.x, this.y - 8, this.x, this.y + 8);
+        line(this.x - 7, this.y, this.x + 7, this.y);
+        if (this.q > 0) line(this.x, this.y - 7, this.x, this.y + 7);
     }
 }
 
 function setup() {
     createCanvas(windowWidth, windowHeight);
-    // 模擬圖中的偶極矩配置
-    charges.push(new Charge(width/2 - 120, height/2, 1));
-    charges.push(new Charge(width/2 + 120, height/2, -1));
+    // 初始化配置：模擬標準偶極矩 + 一個額外正電荷
+    charges.push(new Charge(width/2 - 150, height/2, 1));
+    charges.push(new Charge(width/2 + 150, height/2, -1));
+    charges.push(new Charge(width/2, height/2 - 200, 1));
 }
 
 function draw() {
-    background(255); // 改為白色背景，更像教材
+    background(255); // 改用白色背景，與教材圖片一致
     
     for (let c of charges) {
-        // 核心：正電順向發射 (1)，負電逆向接收 (-1)
+        // 核心邏輯：正電順向發射 (1)，負電逆向接收 (-1)
+        // 解決「負電荷線條太少」的問題
         let direction = (c.q > 0) ? 1 : -1;
         let numLines = Math.abs(c.q) * linesPerCharge;
         
         for (let i = 0; i < numLines; i++) {
             let a = map(i, 0, numLines, 0, TWO_PI);
-            let startX = c.x + cos(a) * 18;
-            let startY = c.y + sin(a) * 18;
-            // 呼叫下方我們補上的這個新函數
+            let startX = c.x + cos(a) * 20;
+            let startY = c.y + sin(a) * 20;
             traceFieldLine(startX, startY, direction);
         }
     }
@@ -84,12 +83,13 @@ function draw() {
     }
 }
 
-function traceFieldLine(x, y, dir) {
-    let px = x;
-    let py = y;
+// 核心追蹤函數：整合了物理計算與箭頭段繪製
+function traceFieldLine(startX, startY, dir) {
+    let px = startX;
+    let py = startY;
     let stepSize = 4;
-    let maxSteps = 300; // 雙向追蹤，單向步數不用太長
-    let segmentInterval = 12; // 箭頭出現的間隔
+    let maxSteps = 400; 
+    let segmentInterval = 10; // 箭頭出現密度
     
     for (let k = 0; k < maxSteps; k++) {
         let totalE = createVector(0, 0);
@@ -98,10 +98,10 @@ function traceFieldLine(x, y, dir) {
         for (let c of charges) {
             let r = createVector(px - c.x, py - c.y);
             let d = r.mag();
-            
-            // 物理檢查：如果靠近「其他」電荷，就停止，避免線條穿進電荷內部
+            // 物理檢查：避免場線穿過電荷中心
             if (d < 15 && k > 2) { stopLine = true; break; }
             
+            // E = kQ/r^2
             let strength = c.q / (d * d);
             r.normalize().mult(strength);
             totalE.add(r);
@@ -111,46 +111,47 @@ function traceFieldLine(x, y, dir) {
 
         let angle = totalE.heading();
         
-        // 箭頭方向處理：如果是負電出發 (dir = -1)，箭頭要反向 180 度
+        // 如果是從負電荷反向追蹤，箭頭要轉 180 度指向電荷
         let arrowAngle = (dir === 1) ? angle : angle + PI;
 
         if (k % segmentInterval === 0) {
             drawArrowSegment(px, py, arrowAngle, 12);
         }
         
-        // 更新位置：順著或逆著電場方向移動
+        // 根據 direction 決定前進或後退
         let v = totalE.normalize().mult(stepSize * dir);
         px += v.x;
         py += v.y;
 
-        // 超出螢幕邊界就停止
+        // 離開畫面一定距離後停止計算
         if (px < -100 || px > width + 100 || py < -100 || py > height + 100) break;
     }
 }
-// 這個函數負責畫出每一小段帶箭頭的線
+
+// 修正：補上之前遺失的 drawArrowSegment 函數
 function drawArrowSegment(x, y, angle, len) {
     push();
     translate(x, y);
     rotate(angle);
-    
-    // 畫白色的線段
-    stroke(255, 180); 
-    strokeWeight(1.5);
+    stroke(100, 150); // 灰色半透明線段，視覺較細緻
+    strokeWeight(1);
     line(0, 0, len, 0); 
     
-    // 畫箭頭尖端
     noStroke();
-    fill(255, 220);
-    let arrowSize = 5;
-    triangle(len + 2, 0, len - arrowSize, -arrowSize/1.5, len - arrowSize, arrowSize/1.5);
+    fill(100, 180);
+    let arrowSize = 4;
+    // 在線段末端繪製小箭頭
+    triangle(len + 1, 0, len - arrowSize, -arrowSize/1.5, len - arrowSize, arrowSize/1.5);
     pop();
 }
+
 function windowResized() {
     resizeCanvas(windowWidth, windowHeight);
 }
 </script>
 </body>
 </html>
+
 
 
 
