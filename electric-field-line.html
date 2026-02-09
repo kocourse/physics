@@ -15,7 +15,7 @@
         紅：正電荷 | 藍：負電荷
     </div>
 <script>
-這個錯誤 Uncaught ReferenceError: Charge is not defined 是因為程式執行到 new Charge(...) 時，電腦還不認識 Charge 這個類別（Class）。這通常有兩個原因：一是類別定義被刪除了，二是類別定義被放在了呼叫它的代碼之後。要畫出課本那種平滑且比例精確的電力線（如您提供的 $+2q$ 與 $-q/2$ 圖），我們必須把類別、繪圖、以及您的「編號檢查」邏輯完整組合起來。🚀 修正後的完整程式碼（課本級電力線邏輯）請將以下代碼全選並替換您目前的腳本。我已經把 Charge 類別移到最上方，並補齊了所有函數。JavaScript// 1. 先定義類別，確保後續 new Charge 不會報錯
+// 1. 先定義類別，確保後續 new Charge 不會報錯
 class Charge {
   constructor(x, y, q, maxLines) {
     this.x = x;
@@ -55,87 +55,119 @@ class Charge {
     text(this.q + "q", this.x, this.y + 30);
   }
 }
+
 let charges = [];
 
 function setup() {
-  createCanvas(600, 600);
-  // 模擬課本：左邊 -q/2 (編號0), 右邊 +2q (編號1)
-  charges.push(new Charge(150, 300, -0.5, 4)); // 4條配額
-  charges.push(new Charge(400, 300, 2, 16));   // 16條配額
+  createCanvas(windowWidth, windowHeight);
+  // 按照課本比例：+2q 對應 16 條線，-0.5q 對應 4 條線
+  charges.push(new Charge(width / 2 + 100, height / 2, 2, 16));
+  charges.push(new Charge(width / 2 - 200, height / 2, -0.5, 4));
 }
 
 function draw() {
   background(255);
 
-  // 每次重畫前重設「已接收數量」
+  // 每次繪圖前，清空所有電荷的連接計數
   for (let c of charges) c.connectedCount = 0;
 
-  // 1. 先讓正電荷發射 (依照編號順序)
+  // 您的編號檢查邏輯：
+  // 第一步：先讓正電荷發射 (順向)
   for (let c of charges) {
     if (c.q > 0) {
       for (let i = 0; i < c.maxLines; i++) {
         let a = map(i, 0, c.maxLines, 0, TWO_PI);
-        let startX = c.x + cos(a) * 15;
-        let startY = c.y + sin(a) * 15;
-        
-        // 追蹤並找出終點是哪個電荷
-        let target = traceAndDraw(startX, startY, 1); 
-        if (target) target.connectedCount++;
+        let sx = c.x + cos(a) * 18;
+        let sy = c.y + sin(a) * 18;
+        let target = traceFieldLine(sx, sy, 1);
+        if (target) target.connectedCount++; // 如果撞到負電，對方的計數+1
       }
     }
   }
 
-  // 2. 檢查負電荷是否還有「未填滿」的配額 (來自無窮遠的線)
+  // 第二步：檢查負電荷，補足剩餘沒被連上的線 (逆向)
   for (let c of charges) {
     if (c.q < 0) {
       let remaining = c.maxLines - c.connectedCount;
-      for (let i = 0; i < remaining; i++) {
-        // 在剩餘的空間中均勻發射（反向追蹤）
-        let a = map(i, 0, remaining, 0, TWO_PI);
-        let startX = c.x + cos(a) * 15;
-        let startY = c.y + sin(a) * 15;
-        traceAndDraw(startX, startY, -1);
+      if (remaining > 0) {
+        for (let i = 0; i < remaining; i++) {
+          // 為了美觀，剩餘的線在負電荷周圍均勻分布
+          let a = map(i, 0, remaining, 0, TWO_PI);
+          let sx = c.x + cos(a) * 18;
+          let sy = c.y + sin(a) * 18;
+          traceFieldLine(sx, sy, -1);
+        }
       }
     }
   }
 
-  for (let c of charges) { c.display(); c.update(); }
+  for (let c of charges) {
+    c.update();
+    c.display();
+  }
 }
 
-function traceAndDraw(sx, sy, dir) {
-  let px = sx, py = sy;
+function traceFieldLine(sx, sy, dir) {
+  let px = sx;
+  let py = sy;
+  let stepSize = 4;
+  let maxSteps = 600;
+  
   beginShape();
   noFill();
-  stroke(100, 150);
-  
-  for (let k = 0; k < 500; k++) {
+  stroke(100, 100); // 課本常見的灰色細線
+
+  for (let k = 0; k < maxSteps; k++) {
     vertex(px, py);
-    let E = calculateE(px, py);
-    if (E.mag() < 0.01) break;
+    let totalE = createVector(0, 0);
+    let hitCharge = null;
 
-    // 檢查是否撞到「其他」電荷
-    let hit = null;
     for (let c of charges) {
-      if (dist(px, py, c.x, c.y) < 15 && k > 5) { hit = c; break; }
+      let r = createVector(px - c.x, py - c.y);
+      let d = r.mag();
+      if (d < 15 && k > 5) { hitCharge = c; break; }
+      let strength = c.q / (d * d);
+      r.normalize().mult(strength);
+      totalE.add(r);
     }
-    
-    if (hit) {
+
+    if (hitCharge) {
       endShape();
-      drawArrowOnLine(px, py, E.heading(), dir); // 確保箭頭物理正確
-      return hit; 
+      // 在連上的最後一刻畫箭頭，方向永遠指向電場 E
+      drawArrow(px, py, totalE.heading());
+      return hitCharge; 
     }
 
-    let step = E.normalize().mult(4 * dir);
-    px += step.x; py += step.y;
+    if (totalE.mag() < 0.001) break;
 
-    if (px < -50 || px > width+50 || py < -50 || py > height+50) break;
+    // 定期在線上畫小箭頭
+    if (k % 40 === 20) drawArrow(px, py, totalE.heading());
+
+    let v = totalE.normalize().mult(stepSize * dir);
+    px += v.x;
+    py += v.y;
+
+    if (px < -100 || px > width + 100 || py < -100 || py > height + 100) break;
   }
   endShape();
   return null;
 }
+
+function drawArrow(x, y, angle) {
+  push();
+  translate(x, y);
+  rotate(angle);
+  fill(100);
+  noStroke();
+  triangle(0, 0, -8, -4, -8, 4);
+  pop();
+}
+
+function windowResized() { resizeCanvas(windowWidth, windowHeight); }
 </script>
 </body>
 </html>
+
 
 
 
