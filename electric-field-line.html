@@ -52,9 +52,9 @@ function draw() {
 function traceFieldLine(x, y) {
     let px = x;
     let py = y;
-    let stepSize = 7;      // 每一步移動的距離
-    let maxSteps = 120;    // 總步數
-    let segmentLength = 6; // 每段「箭頭線」的長度
+    let stepSize = 5;      // 步長縮短一點，路徑會更精確
+    let maxSteps = 400;    // 大幅增加步數，確保能走到負電或邊界
+    let segmentInterval = 15; // 每隔幾步畫一個箭頭
     
     for (let k = 0; k < maxSteps; k++) {
         let totalE = createVector(0, 0);
@@ -63,8 +63,13 @@ function traceFieldLine(x, y) {
         for (let c of charges) {
             let r = createVector(px - c.x, py - c.y);
             let d = r.mag();
+            
+            // 距離判斷：如果快撞到電荷了就停止
             if (d < 15) { stopLine = true; break; }
-            r.normalize().mult(c.q / (d * d));
+            
+            // 標準庫倫定律反平方
+            let strength = c.q / (d * d);
+            r.normalize().mult(strength);
             totalE.add(r);
         }
 
@@ -72,18 +77,19 @@ function traceFieldLine(x, y) {
 
         let angle = totalE.heading();
 
-        // --- 核心修改：每隔一定步數畫一個帶箭頭的線段 ---
-        // 這裡設定每 12 步畫一段，創造出「一段一段」的間隔感
-        if (k % 12 === 0) {
-            drawArrowSegment(px, py, angle, segmentLength);
+        // --- 關鍵修改：繪製不連續但連貫的箭頭段落 ---
+        if (k % segmentInterval === 0) {
+            // 畫出帶箭頭的小段，長度稍微比間隔短一點點，創造出斷點感
+            drawArrowSegment(px, py, angle, 8); 
         }
         
-        // 更新位置
+        // 更新座標，讓點繼續前進
         totalE.normalize().mult(stepSize);
         px += totalE.x;
         py += totalE.y;
 
-        if (px < 0 || px > width || py < 0 || py > height) break;
+        // 離開畫面才停止
+        if (px < -50 || px > width + 50 || py < -50 || py > height + 50) break;
     }
 }
 
@@ -149,5 +155,6 @@ function windowResized() {
 </script>
 </body>
 </html>
+
 
 
