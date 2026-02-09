@@ -127,13 +127,31 @@ function traceFieldLine(x, y, dir) {
         if (px < -100 || px > width + 100 || py < -100 || py > height + 100) break;
     }
 }
-
+// 這個函數負責畫出每一小段帶箭頭的線
+function drawArrowSegment(x, y, angle, len) {
+    push();
+    translate(x, y);
+    rotate(angle);
+    
+    // 畫白色的線段
+    stroke(255, 180); 
+    strokeWeight(1.5);
+    line(0, 0, len, 0); 
+    
+    // 畫箭頭尖端
+    noStroke();
+    fill(255, 220);
+    let arrowSize = 5;
+    triangle(len + 2, 0, len - arrowSize, -arrowSize/1.5, len - arrowSize, arrowSize/1.5);
+    pop();
+}
 function windowResized() {
     resizeCanvas(windowWidth, windowHeight);
 }
 </script>
 </body>
 </html>
+
 
 
 
