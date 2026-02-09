@@ -14,94 +14,11 @@
         拖曳電荷移動位置<br>
         紅：正電荷 | 藍：負電荷
     </div>
-
 <script>
 let charges = [];
-const linesPerCharge = 10; // 改為 10 條
+const linesPerCharge = 10;
 
-function setup() {
-    createCanvas(windowWidth, windowHeight);
-    // 初始化電荷
-    charges.push(new Charge(width/2 - 200, height/2, 1));
-    charges.push(new Charge(width/2 + 200, height/2, -1));
-    charges.push(new Charge(width/2, height/2 - 150, 1));
-}
-
-function draw() {
-    background(0);
-    
-    // 繪製場線
-    for (let c of charges) {
-        if (c.q > 0) {
-            let numLines = Math.abs(c.q) * linesPerCharge;
-            for (let i = 0; i < numLines; i++) {
-                // 使用 map 確保 10 條線均勻分布
-                let a = map(i, 0, numLines, 0, TWO_PI);
-                let startX = c.x + cos(a) * 15;
-                let startY = c.y + sin(a) * 15;
-                traceFieldLine(startX, startY);
-            }
-        }
-    }
-
-    // 更新並顯示電荷
-    for (let c of charges) {
-        c.update();
-        c.display();
-    }
-}
-
-function traceFieldLine(x, y) {
-    let px = x;
-    let py = y;
-    let stepSize = 4;      
-    let maxSteps = 500;    
-    let segmentInterval = 6; // 每 6 步畫一個向量段
-    
-    for (let k = 0; k < maxSteps; k++) {
-        let totalE = createVector(0, 0);
-        let stopLine = false;
-
-        for (let c of charges) {
-            let r = createVector(px - c.x, py - c.y);
-            let d = r.mag();
-            if (d < 15) { stopLine = true; break; }
-            let strength = c.q / (d * d);
-            r.normalize().mult(strength);
-            totalE.add(r);
-        }
-
-        if (stopLine || totalE.mag() === 0) break;
-
-        let angle = totalE.heading();
-
-        // 畫出「一段一段帶箭頭」的向量場
-        if (k % segmentInterval === 0) {
-            drawArrowSegment(px, py, angle, 20); 
-        }
-        
-        px += totalE.normalize().x * stepSize;
-        py += totalE.normalize().y * stepSize;
-
-        if (px < -100 || px > width + 100 || py < -100 || py > height + 100) break;
-    }
-}
-
-function drawArrowSegment(x, y, angle, len) {
-    push();
-    translate(x, y);
-    rotate(angle);
-    stroke(255, 255, 255, 180); 
-    strokeWeight(1.5);
-    line(0, 0, len, 0); 
-    noStroke();
-    fill(255, 220);
-    let arrowSize = 5;
-    triangle(len + 2, 0, len - arrowSize, -arrowSize/1.5, len - arrowSize, arrowSize/1.5);
-    pop();
-}
-
-// --- 之前缺少的部分：Charge 類別定義 ---
+// --- 1. 先定義類別 (建議放在最前面或最後面) ---
 class Charge {
     constructor(x, y, q) {
         this.x = x;
@@ -132,12 +49,73 @@ class Charge {
     }
 }
 
+// --- 2. p5.js 的主邏輯 ---
+function setup() {
+    createCanvas(windowWidth, windowHeight);
+    charges.push(new Charge(width/2 - 200, height/2, 1));
+    charges.push(new Charge(width/2 + 200, height/2, -1));
+    charges.push(new Charge(width/2, height/2 - 150, 1));
+}
+
+function draw() {
+    background(0);
+    for (let c of charges) {
+        if (c.q > 0) {
+            let numLines = Math.abs(c.q) * linesPerCharge;
+            for (let i = 0; i < numLines; i++) {
+                let a = map(i, 0, numLines, 0, TWO_PI);
+                traceFieldLine(c.x + cos(a) * 15, c.y + sin(a) * 15);
+            }
+        }
+    }
+    for (let c of charges) {
+        c.update();
+        c.display();
+    }
+}
+
+// --- 3. 繪圖輔助函數 ---
+function traceFieldLine(x, y) {
+    let px = x, py = y;
+    let stepSize = 4, maxSteps = 500, segmentInterval = 6;
+    for (let k = 0; k < maxSteps; k++) {
+        let totalE = createVector(0, 0);
+        let stopLine = false;
+        for (let c of charges) {
+            let r = createVector(px - c.x, py - c.y);
+            let d = r.mag();
+            if (d < 15) { stopLine = true; break; }
+            r.normalize().mult(c.q / (d * d));
+            totalE.add(r);
+        }
+        if (stopLine || totalE.mag() === 0) break;
+        if (k % segmentInterval === 0) drawArrowSegment(px, py, totalE.heading(), 20);
+        let v = totalE.normalize().mult(stepSize);
+        px += v.x; py += v.y;
+        if (px < -100 || px > width + 100 || py < -100 || py > height + 100) break;
+    }
+}
+
+function drawArrowSegment(x, y, angle, len) {
+    push();
+    translate(x, y);
+    rotate(angle);
+    stroke(255, 180);
+    strokeWeight(1.5);
+    line(0, 0, len, 0);
+    noStroke();
+    fill(255, 220);
+    triangle(len + 2, 0, len - 5, -3.5, len - 5, 3.5);
+    pop();
+}
+
 function windowResized() {
     resizeCanvas(windowWidth, windowHeight);
 }
 </script>
 </body>
 </html>
+
 
 
 
