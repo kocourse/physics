@@ -110,56 +110,65 @@ function draw() {
 function traceFieldLine(sx, sy, dir) {
   let px = sx;
   let py = sy;
-  let stepSize = 4;
-  let maxSteps = 600;
+  let stepSize = 4; // 每一小步的長度
+  let maxSteps = 800; // 增加步數，讓線條能延伸到對面或邊界
   
-  beginShape();
+  beginShape(); // 開始繪製這條線
   noFill();
-  stroke(100, 100); // 課本常見的灰色細線
+  stroke(100, 150); // 課本風格的灰色細線
+  strokeWeight(1.2);
 
   for (let k = 0; k < maxSteps; k++) {
+    // 1. 將當前座標記錄為線段的一個節點
     vertex(px, py);
+
     let totalE = createVector(0, 0);
     let hitCharge = null;
 
+    // 2. 計算該點受到的合電場 (向量疊加)
     for (let c of charges) {
       let r = createVector(px - c.x, py - c.y);
       let d = r.mag();
+      
+      // 碰撞偵測：如果撞到「非起始」電荷，就連上去並結束
       if (d < 15 && k > 5) { hitCharge = c; break; }
-      let strength = c.q / (d * d);
+      
+      let strength = c.q / (d * d); // E = kQ/r^2
       r.normalize().mult(strength);
       totalE.add(r);
     }
 
+    // 3. 處理碰撞與停止條件
     if (hitCharge) {
+      vertex(hitCharge.x, hitCharge.y); // 強制連到電荷中心
       endShape();
-      // 在連上的最後一刻畫箭頭，方向永遠指向電場 E
-      drawArrow(px, py, totalE.heading());
-      return hitCharge; 
+      return hitCharge; // 回傳給 draw()，告知編號補線邏輯「已接上」
     }
 
-    if (totalE.mag() < 0.001) break;
+    if (totalE.mag() < 0.001) break; // 電場太弱就停下
 
-    // 定期在線上畫小箭頭
-    if (k % 40 === 20) drawArrow(px, py, totalE.heading());
+    // 4. 定期畫箭頭（課本那種路徑上的小尖頭）
+    if (k % 60 === 30) drawArrowHead(px, py, totalE.heading());
 
-    let v = totalE.normalize().mult(stepSize * dir);
-    px += v.x;
-    py += v.y;
+    // 5. 更新位置：dir 為 1 順著畫，-1 逆著畫
+    let move = totalE.normalize().mult(stepSize * dir);
+    px += move.x;
+    py += move.y;
 
-    if (px < -100 || px > width + 100 || py < -100 || py > height + 100) break;
+    // 6. 出界檢查：到了螢幕邊緣就停
+    if (px < -width || px > width * 2 || py < -height || py > height * 2) break;
   }
   endShape();
   return null;
 }
 
-function drawArrow(x, y, angle) {
+// 課本風格的小箭頭
+function drawArrowHead(x, y, angle) {
   push();
   translate(x, y);
   rotate(angle);
-  fill(100);
-  noStroke();
-  triangle(0, 0, -8, -4, -8, 4);
+  fill(100); noStroke();
+  triangle(0, 0, -7, -3.5, -7, 3.5);
   pop();
 }
 
@@ -167,6 +176,7 @@ function windowResized() { resizeCanvas(windowWidth, windowHeight); }
 </script>
 </body>
 </html>
+
 
 
 
