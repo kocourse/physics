@@ -16,140 +16,87 @@
     </div>
 <script>
 let charges = [];
-const linesPerCharge = 8; 
-
-class Charge {
-    constructor(x, y, q) {
-        this.x = x;
-        this.y = y;
-        this.q = q;
-        this.isDragging = false;
-    }
-    update() {
-        if (mouseIsPressed) {
-            let d = dist(mouseX, mouseY, this.x, this.y);
-            if (d < 30 || this.isDragging) {
-                this.x = mouseX;
-                this.y = mouseY;
-                this.isDragging = true;
-            }
-        } else {
-            this.isDragging = false;
-        }
-    }
-    display() {
-        noStroke();
-        // 使用專業的紅藍漸層色
-        let col = this.q > 0 ? color(200, 20, 20) : color(20, 20, 200);
-        fill(col);
-        circle(this.x, this.y, 35);
-        
-        // 畫出白色的正負號
-        stroke(255);
-        strokeWeight(2);
-        line(this.x - 7, this.y, this.x + 7, this.y);
-        if (this.q > 0) line(this.x, this.y - 7, this.x, this.y + 7);
-    }
-}
 
 function setup() {
-    createCanvas(windowWidth, windowHeight);
-    // 初始化配置：模擬標準偶極矩 + 一個額外正電荷
-    charges.push(new Charge(width/2 - 150, height/2, 1));
-    charges.push(new Charge(width/2 + 150, height/2, -1));
-    charges.push(new Charge(width/2, height/2 - 200, 1));
+  createCanvas(600, 600);
+  // 模擬課本：左邊 -q/2 (編號0), 右邊 +2q (編號1)
+  charges.push(new Charge(150, 300, -0.5, 4)); // 4條配額
+  charges.push(new Charge(400, 300, 2, 16));   // 16條配額
 }
 
 function draw() {
-    background(255); // 改用白色背景，與教材圖片一致
-    
-    for (let c of charges) {
-        // 核心邏輯：正電順向發射 (1)，負電逆向接收 (-1)
-        // 解決「負電荷線條太少」的問題
-        let direction = (c.q > 0) ? 1 : -1;
-        let numLines = Math.abs(c.q) * linesPerCharge;
+  background(255);
+
+  // 每次重畫前重設「已接收數量」
+  for (let c of charges) c.connectedCount = 0;
+
+  // 1. 先讓正電荷發射 (依照編號順序)
+  for (let c of charges) {
+    if (c.q > 0) {
+      for (let i = 0; i < c.maxLines; i++) {
+        let a = map(i, 0, c.maxLines, 0, TWO_PI);
+        let startX = c.x + cos(a) * 15;
+        let startY = c.y + sin(a) * 15;
         
-        for (let i = 0; i < numLines; i++) {
-            let a = map(i, 0, numLines, 0, TWO_PI);
-            let startX = c.x + cos(a) * 20;
-            let startY = c.y + sin(a) * 20;
-            traceFieldLine(startX, startY, direction);
-        }
+        // 追蹤並找出終點是哪個電荷
+        let target = traceAndDraw(startX, startY, 1); 
+        if (target) target.connectedCount++;
+      }
     }
+  }
 
+  // 2. 檢查負電荷是否還有「未填滿」的配額 (來自無窮遠的線)
+  for (let c of charges) {
+    if (c.q < 0) {
+      let remaining = c.maxLines - c.connectedCount;
+      for (let i = 0; i < remaining; i++) {
+        // 在剩餘的空間中均勻發射（反向追蹤）
+        let a = map(i, 0, remaining, 0, TWO_PI);
+        let startX = c.x + cos(a) * 15;
+        let startY = c.y + sin(a) * 15;
+        traceAndDraw(startX, startY, -1);
+      }
+    }
+  }
+
+  for (let c of charges) { c.display(); c.update(); }
+}
+
+function traceAndDraw(sx, sy, dir) {
+  let px = sx, py = sy;
+  beginShape();
+  noFill();
+  stroke(100, 150);
+  
+  for (let k = 0; k < 500; k++) {
+    vertex(px, py);
+    let E = calculateE(px, py);
+    if (E.mag() < 0.01) break;
+
+    // 檢查是否撞到「其他」電荷
+    let hit = null;
     for (let c of charges) {
-        c.update();
-        c.display();
+      if (dist(px, py, c.x, c.y) < 15 && k > 5) { hit = c; break; }
     }
-}
-
-// 核心追蹤函數：整合了物理計算與箭頭段繪製
-function traceFieldLine(startX, startY, dir) {
-    let px = startX;
-    let py = startY;
-    let stepSize = 4;
-    let maxSteps = 400; 
-    let segmentInterval = 10; 
     
-    for (let k = 0; k < maxSteps; k++) {
-        let totalE = createVector(0, 0);
-        let stopLine = false;
-
-        for (let c of charges) {
-            let r = createVector(px - c.x, py - c.y);
-            let d = r.mag();
-            // 碰到「其他」電荷就停止
-            if (d < 15 && k > 2) { stopLine = true; break; }
-            
-            // 標準物理公式 E = kQ/r^2
-            let strength = c.q / (d * d);
-            r.normalize().mult(strength);
-            totalE.add(r);
-        }
-
-        if (stopLine || totalE.mag() === 0) break;
-
-        // --- 核心物理修正：箭頭方向 ---
-        // 無論是從正電出發還是負電出發，箭頭永遠必須指向「總電場 E」的方向
-        let angle = totalE.heading(); 
-
-        if (k % segmentInterval === 0) {
-            // 這裡的 angle 永遠代表電場方向，所以負電荷周圍的箭頭會自動指向它
-            drawArrowSegment(px, py, angle, 12);
-        }
-        
-        // 移動邏輯：dir 決定我們是順著電場畫(1)還是逆著電場畫(-1)
-        let v = totalE.normalize().mult(stepSize * dir);
-        px += v.x;
-        py += v.y;
-
-        if (px < -100 || px > width + 100 || py < -100 || py > height + 100) break;
+    if (hit) {
+      endShape();
+      drawArrowOnLine(px, py, E.heading(), dir); // 確保箭頭物理正確
+      return hit; 
     }
-}
 
-// 修正：補上之前遺失的 drawArrowSegment 函數
-function drawArrowSegment(x, y, angle, len) {
-    push();
-    translate(x, y);
-    rotate(angle);
-    stroke(100, 150); // 灰色半透明線段，視覺較細緻
-    strokeWeight(1);
-    line(0, 0, len, 0); 
-    
-    noStroke();
-    fill(100, 180);
-    let arrowSize = 4;
-    // 在線段末端繪製小箭頭
-    triangle(len + 1, 0, len - arrowSize, -arrowSize/1.5, len - arrowSize, arrowSize/1.5);
-    pop();
-}
+    let step = E.normalize().mult(4 * dir);
+    px += step.x; py += step.y;
 
-function windowResized() {
-    resizeCanvas(windowWidth, windowHeight);
+    if (px < -50 || px > width+50 || py < -50 || py > height+50) break;
+  }
+  endShape();
+  return null;
 }
 </script>
 </body>
 </html>
+
 
 
 
