@@ -16,7 +16,96 @@
     </div>
 
 <script>
-class Charge {
+let charges = [];
+const linesPerCharge = 10; // 每單位電量的場線數量
+
+function setup() {
+    createCanvas(windowWidth, windowHeight);
+    // 初始化：正電荷 +1 (發射 16 條), 負電荷 -1 (接收 16 條), 正電荷 +1 (發射 16 條)
+    charges.push(new Charge(width/2 - 200, height/2, 1));
+    charges.push(new Charge(width/2 + 200, height/2, -1));
+    charges.push(new Charge(width/2, height/2 - 150, 1));
+}
+
+function draw() {
+    background(0);
+    
+    // 只從「正電荷」出發畫線 (場線由正極流向負極或無限遠)
+    for (let c of charges) {
+        if (c.q > 0) {
+            let numLines = Math.abs(c.q) * linesPerCharge;
+            for (let a = 0; a < TWO_PI; a += TWO_PI / numLines) {
+                // 從電荷邊緣一點點的位置出發
+                let startX = c.x + cos(a) * 15;
+                let startY = c.y + sin(a) * 15;
+                traceFieldLine(startX, startY);
+            }
+        }
+    }
+
+    for (let c of charges) {
+        c.update();
+        c.display();
+    }
+}
+
+function traceFieldLine(x, y) {
+    let px = x;
+    let py = y;
+    let stepSize = 7;      // 每一步移動的距離
+    let maxSteps = 120;    // 總步數
+    let segmentLength = 6; // 每段「箭頭線」的長度
+    
+    for (let k = 0; k < maxSteps; k++) {
+        let totalE = createVector(0, 0);
+        let stopLine = false;
+
+        for (let c of charges) {
+            let r = createVector(px - c.x, py - c.y);
+            let d = r.mag();
+            if (d < 15) { stopLine = true; break; }
+            r.normalize().mult(c.q / (d * d));
+            totalE.add(r);
+        }
+
+        if (stopLine || totalE.mag() === 0) break;
+
+        let angle = totalE.heading();
+
+        // --- 核心修改：每隔一定步數畫一個帶箭頭的線段 ---
+        // 這裡設定每 12 步畫一段，創造出「一段一段」的間隔感
+        if (k % 12 === 0) {
+            drawArrowSegment(px, py, angle, segmentLength);
+        }
+        
+        // 更新位置
+        totalE.normalize().mult(stepSize);
+        px += totalE.x;
+        py += totalE.y;
+
+        if (px < 0 || px > width || py < 0 || py > height) break;
+    }
+}
+
+// 新增：專門畫「帶箭頭的小線段」的函數
+function drawArrowSegment(x, y, angle, len) {
+    push();
+    translate(x, y);
+    rotate(angle);
+    
+    stroke(255, 255, 255, 150); // 線條顏色
+    strokeWeight(1);
+    line(0, 0, len, 0);         // 畫短線
+    
+    noStroke();
+    fill(255, 255, 255, 200);   // 箭頭顏色
+    let arrowSize = 4;
+    // 在短線的末端畫小三角形
+    triangle(len + 2, 0, len - arrowSize, -arrowSize/1.5, len - arrowSize, arrowSize/1.5);
+    pop();
+}
+
+    class Charge {
     constructor(x, y, q) {
         this.x = x;
         this.y = y;
@@ -56,93 +145,9 @@ class Charge {
 function windowResized() {
     resizeCanvas(windowWidth, windowHeight);
 }
-let charges = [];
-const linesPerCharge = 16; // 每單位電量的場線數量
 
-function setup() {
-    createCanvas(windowWidth, windowHeight);
-    // 初始化：正電荷 +1 (發射 16 條), 負電荷 -1 (接收 16 條), 正電荷 +1 (發射 16 條)
-    charges.push(new Charge(width/2 - 200, height/2, 1));
-    charges.push(new Charge(width/2 + 200, height/2, -1));
-    charges.push(new Charge(width/2, height/2 - 150, 1));
-}
-
-function draw() {
-    background(0);
-    
-    // 只從「正電荷」出發畫線 (場線由正極流向負極或無限遠)
-    for (let c of charges) {
-        if (c.q > 0) {
-            let numLines = Math.abs(c.q) * linesPerCharge;
-            for (let a = 0; a < TWO_PI; a += TWO_PI / numLines) {
-                // 從電荷邊緣一點點的位置出發
-                let startX = c.x + cos(a) * 15;
-                let startY = c.y + sin(a) * 15;
-                traceFieldLine(startX, startY);
-            }
-        }
-    }
-
-    for (let c of charges) {
-        c.update();
-        c.display();
-    }
-}
-
-function traceFieldLine(x, y) {
-    let px = x;
-    let py = y;
-    let stepSize = 6;
-    let maxSteps = 150; // 增加步數讓線條延伸更遠
-    
-    noFill();
-    stroke(255, 255, 255, 100);
-    beginShape();
-    
-    let lastAngle = 0;
-    for (let k = 0; k < maxSteps; k++) {
-        let totalE = createVector(0, 0);
-        let nearCharge = false;
-
-        for (let c of charges) {
-            let r = createVector(px - c.x, py - c.y);
-            let d = r.mag();
-            
-            // 如果撞到負電荷或回到原電荷，就停止
-            if (d < 10) { nearCharge = true; break; }
-            
-            r.normalize().mult(c.q / (d * d));
-            totalE.add(r);
-        }
-
-        if (nearCharge) break;
-
-        lastAngle = totalE.heading();
-        vertex(px, py);
-        
-        totalE.normalize().mult(stepSize);
-        px += totalE.x;
-        py += totalE.y;
-
-        // 離開畫面也停止
-        if (px < 0 || px > width || py < 0 || py > height) break;
-    }
-    endShape();
-
-    // 在電力線的末端畫箭頭
-    drawArrowHead(px, py, lastAngle);
-}
-
-function drawArrowHead(x, y, angle) {
-    push();
-    translate(x, y);
-    rotate(angle);
-    fill(255, 200);
-    noStroke();
-    triangle(8, 0, -5, -4, -5, 4);
-    pop();
-}
 </script>
 </body>
 </html>
+
 
