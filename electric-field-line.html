@@ -50,39 +50,55 @@ function draw() {
 function drawFieldLine(x, y) {
     let px = x;
     let py = y;
-    
+    let steps = 15; // 增加線段長度
+    let arrowGap = 8; // 每隔幾步畫一個箭頭
+
     beginShape();
     noFill();
-    for (let k = 0; k < 10; k++) { // 延伸長度
+    stroke(255, 255, 255, 80);
+
+    for (let k = 0; k < steps; k++) {
         let field = createVector(0, 0);
+        
+        // 計算該點受所有電荷影響的總電場
         for (let c of charges) {
             let v = createVector(px - c.x, py - c.y);
             let d = v.mag();
-            if (d < 10) return;
+            if (d < 15) return; // 靠電荷太近就停止繪製
             v.normalize();
+            // 電場強度與距離平方成反比 E = k*q/r^2
             v.mult(c.q / (d * d));
             field.add(v);
         }
-        field.normalize().mult(5); // 步長
-        px += field.x;
-        py += field.y;
+
+        field.normalize();
+        
+        // 在特定步數繪製箭頭
+        if (k === arrowGap) {
+            drawArrow(px, py, field.heading());
+        }
+
+        let stepSize = 10; 
+        px += field.x * stepSize;
+        py += field.y * stepSize;
         vertex(px, py);
     }
     endShape();
 }
 
-class Charge {
-    constructor(x, y, q) {
-        this.x = x;
-        this.y = y;
-        this.q = q;
-    }
-    display() {
-        noStroke();
-        fill(this.q > 0 ? 'red' : 'blue');
-        circle(this.x, this.y, 20);
-    }
+// 專門繪製箭頭的輔助函數
+function drawArrow(x, y, angle) {
+    push();
+    translate(x, y);
+    rotate(angle);
+    fill(255, 255, 255, 150);
+    noStroke();
+    let arrowSize = 6;
+    // 畫一個指向正前方的三角形
+    triangle(arrowSize, 0, -arrowSize, -arrowSize/1.5, -arrowSize, arrowSize/1.5);
+    pop();
 }
 </script>
 </body>
+
 </html>
